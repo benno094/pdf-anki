@@ -1,27 +1,4 @@
 import requests
-from PyPDF2 import PdfReader
-from pdf2image import convert_from_path
-from PIL import Image
-
-def extract_text_from_pdf(file_path):
-    text = []
-    with open(file_path, 'rb') as f:
-        reader = PdfReader(f)
-        for page in reader.pages:
-            text.append(page.extract_text())
-    return text
-
-def create_preview_images(file_path, max_size=(600, 800), dpi=100):
-    images = convert_from_path(file_path, dpi=dpi)
-    resized_images = []
-
-    for img in images:
-        width, height = img.size
-        scale = min(max_size[0] / width, max_size[1] / height)
-        new_size = (int(width * scale), int(height * scale))
-        resized_images.append(img.resize(new_size, Image.ANTIALIAS))
-
-    return resized_images
 
 def add_note_to_anki(deck_name, front, back):
     # Create the deck if it doesn't already exist
