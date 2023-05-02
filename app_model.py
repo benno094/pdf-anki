@@ -11,7 +11,6 @@ class AppModel:
     def __init__(self):
         self.api_key = api_key
         self.file_path = ""
-        self.selected_model = "GPT-3.5"
         self.preview_images = None
         self.current_page = 0
         self.selected_pages = set()
@@ -30,6 +29,9 @@ class AppModel:
         else:
             self.selected_pages.remove(self.current_page)
 
+    def clear_selected_pages(self):
+        self.selected_pages = set()
+
     def is_page_selected(self, index):
         return index in self.selected_pages
 
@@ -41,13 +43,13 @@ class AppModel:
                 text.append(page.extract_text())
         return text
 
-    def create_preview_images(self, file_path, max_size=(600, 800), dpi=100):
+    def create_preview_images(self, file_path, max_height=800, dpi=100):
         images = convert_from_path(file_path, dpi=dpi)
         resized_images = []
 
         for img in images:
             width, height = img.size
-            scale = min(max_size[0] / width, max_size[1] / height)
+            scale = max_height / height
             new_size = (int(width * scale), int(height * scale))
             resized_images.append(img.resize(new_size, Image.ANTIALIAS))
 

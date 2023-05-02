@@ -1,52 +1,39 @@
 # actions.py
-import os
+
 import tkinter as tk
-from dotenv import load_dotenv
+import requests
 from functions import send_cards_to_anki
-import openai
 import subprocess
 import time
-
-load_dotenv()
-api_key = os.getenv("OPENAI_API_KEY")
+import gpt4free
+from gpt4free import Provider, forefront
 
 class Actions:
     def __init__(self, app_model):
-        self.api_key = api_key
         self.app_model = app_model
 
-    def send_to_gpt_api(self, prompt):
-        openai.api_key = self.api_key
-
-        completion = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are a helpful assistant."
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            temperature=0.8,
-        )
-
-        if completion['choices']:
-            return completion['choices'][0]['message']['content']
+    def send_to_gpt4free(self, prompt, provider=None):
+        if provider == 'forefront':
+            token = forefront.Account.create(logging=False)
+            response = gpt4free.Completion.create(
+                Provider.ForeFront, prompt=prompt, model='gpt-4', token=token
+            )
+        elif provider == 'you':
+            response = gpt4free.Completion.create(Provider.You, prompt=prompt)
         else:
-            raise Exception("Error: No completion choices returned.")
+            raise ValueError("Invalid provider specified. Must be one of: 'forefront', 'poe', or 'you'.")
 
-    def generate_text(self, file_path, selected_pages, selected_model):
+        if response:
+            return response
+        else:
+            raise Exception("Error: No completion response returned.")
+
+    def generate_text(self, file_path, selected_pages):
         try:
             text = self.app_model.extract_text_from_pdf(file_path)
             selected_text = [text[i].strip('\n') for i in selected_pages]
 
-            if selected_model == "GPT-3.5":
-                max_length = 2048
-            else:
-                max_length = 4096
+            max_length = 4096
 
             text_chunks = []
             current_chunk = ""
