@@ -1,8 +1,10 @@
+import io
 import os
 from dotenv import load_dotenv
 from PyPDF2 import PdfReader
 from pdf2image import convert_from_path
 from PIL import Image
+import fitz
 
 load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
@@ -42,6 +44,28 @@ class AppModel:
             for page in reader.pages:
                 text.append(page.extract_text())
         return text
+    
+    def extract_image_files_from_pdf(self, file_path, selected_pages):
+        image_files = []
+        pdf_document = fitz.open(file_path)
+
+        for page in selected_pages:
+            if page < len(pdf_document):
+                pdf_page = pdf_document.load_page(page)
+                image_list = pdf_page.get_images(full=True)
+
+                for image_index, img in enumerate(image_list):
+                    xref = img[0]
+                    base_image = pdf_document.extract_image(xref)
+                    image_bytes = base_image["image"]
+
+                    image = Image.open(io.BytesIO(image_bytes))
+                    image_path = f"{file_path[:-4]}_page{page}_image{image_index}.png"
+                    image.save(image_path)
+                    image_files.append(image_path)
+
+        pdf_document.close()
+        return image_files
 
     def create_preview_images(self, file_path, max_height=800, dpi=100):
         images = convert_from_path(file_path, dpi=dpi)

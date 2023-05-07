@@ -1,10 +1,14 @@
 # AppView.py
 import json
+import os
 import tkinter as tk
 from tkinter import filedialog
 import tkinter.messagebox as messagebox
 import threading
 from PIL import Image, ImageTk
+import openai
+
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 class AppView(tk.Frame):
     def __init__(self, master, actions, app_model):
@@ -15,20 +19,16 @@ class AppView(tk.Frame):
         self.page_scrollbar = None
         self.last_send_to_gpt_button = None
         self.create_widgets()
+        self.create_preview_canvas()
 
         self.file_path = tk.StringVar()
         self.file_path.set("")
         self.selected_pages = set()
 
     def create_widgets(self):
-        self.preview_canvas = tk.Canvas(self, width=600, height=800, relief=tk.SUNKEN, borderwidth=2)
-        self.preview_canvas.grid(row=1, column=0, rowspan=5, padx=(10, 0), pady=10, sticky="nsew")
-
-        # Bind the mouse scroll event to the canvas
-        self.preview_canvas.bind("<MouseWheel>", self.on_mouse_scroll)
 
         # Create the flashcard frame
-        self.flashcard_frame = tk.Frame(self)
+        # self.flashcard_frame = tk.Frame(self)
         # self.flashcard_frame.grid(row=1, column=0, sticky="nsew")
 
         self.select_file_btn = tk.Button(self, text="Select PDF File", command=self.select_file, font=("Arial", 10))
@@ -37,9 +37,16 @@ class AppView(tk.Frame):
         self.loading_label = tk.Label(self)
         self.loading_label.grid(row=1, column=0, rowspan=5, padx=10, pady=10)
 
+    def create_preview_canvas(self):
+        self.preview_canvas = tk.Canvas(self, width=600, height=800, relief=tk.SUNKEN, borderwidth=2)
+        self.preview_canvas.grid(row=1, column=0, rowspan=5, padx=(10, 0), pady=10, sticky="nsew")
+
+        # Bind the mouse scroll event to the canvas
+        self.preview_canvas.bind("<MouseWheel>", self.on_mouse_scroll)
+
     def create_page_btns(self):
         # Configure the preview canvas to use the scrollbar
-        self.page_scrollbar = tk.Scrollbar(self, orient="vertical", command=self.on_page_scroll)
+        self.page_scrollbar = tk.Scrollbar(self, orient="vertical")
         self.page_scrollbar.grid(row=1, column=1, rowspan=5, pady=10, sticky="ns")
         self.preview_canvas.config(yscrollcommand=self.page_scrollbar.set)
 
@@ -56,49 +63,32 @@ class AppView(tk.Frame):
         self.waiting_text_item = self.preview_canvas.create_text(300, 50, text=prompt, fill="black", font=("Arial", 12), width=500, anchor="center")
     
     def create_clipboard_btn(self, text, row):
+        print("Text:", text)
         def copy_to_clipboard():
-                providers = ['forefront', 'you']
-                successful_response = False
-                text_prompt = "Waiting for response from servers. Can take a few minutes, depending on query size."
-                self.send_txt(text_prompt)
+            self.preview_canvas.delete(self.waiting_text_item)
+            text_prompt = "Waiting for response from servers."
+            self.send_txt(text_prompt)
 
-                for provider in providers:
-                    for _ in range(3):
-                        try:
-                            print(f"Trying provider: {provider}")
-                            response_text = self.actions.send_to_gpt4free(text, provider)
-                            print("Response", response_text)
+            try:
+                response_text = self.actions.send_to_gpt(prompt=text)
 
-                            # Strip anything before and after [] brackets
-                            start = response_text.index('[')
-                            end = response_text.index(']') + 1
-                            json_data = response_text[start:end]
-                            print("Stripped:", json_data)
-                            response_cards = json.loads(json_data, strict=False)
+                # Strip anything before and after [] brackets
+                start = response_text.index('[')
+                end = response_text.index(']') + 1
+                json_data = response_text[start:end]
+                response_cards = json.loads(json_data, strict=False)
 
-                            # Remove waiting message
-                            self.preview_canvas.delete(self.waiting_text_item)
+                # Remove waiting message
+                self.preview_canvas.delete(self.waiting_text_item)
 
-                            self.display_flashcards(response_cards)
+                self.display_flashcards(response_cards)
 
-                            # Store the last used send to GPT button
-                            self.last_send_to_gpt_button = self.btn
+                # Store the last used send to GPT button
+                self.last_send_to_gpt_button = self.btn
 
-                            # Break out of the loop when a valid response is received
-                            successful_response = True
-                            break
+            except Exception as e:
+                print(f"Error with OpenAI's GPT-3.5 Turbo: {str(e)}")
 
-                        except Exception as e:
-                            print(f"Error with provider {provider}: {str(e)}")
-
-                    if successful_response:
-                        break
-
-                if not successful_response:
-                    self.preview_canvas.delete(self.waiting_text_item)
-                    messagebox.showinfo("Failed!", "Retry sending text to GPT.")
-
-        
         btn_text = "Send text to GPT"
         self.btn = tk.Button(self, text=btn_text, command=copy_to_clipboard, font=("Arial", 10))
         self.btn.grid(row=row + 1, column=1, padx=10, pady=10, sticky="w")
@@ -123,27 +113,30 @@ class AppView(tk.Frame):
             self.current_page = page_idx
             self.display_preview(self.current_page)
 
+    def on_mousewheel(self, event):
+        # Determine the direction of the scroll
+        scroll_direction = -1 if event.delta > 0 else 1
+
+        # Adjust the view of the canvas accordingly
+        self.canvas.yview_scroll(scroll_direction, "units")
+
     def display_flashcards(self, flashcards):
         # Clear the preview pane
         self.preview_canvas.delete("all")
 
-        # Create a new frame to hold the flashcard entries and delete any old one
-        self.flashcard_frame.grid_remove()
-        self.flashcard_frame = tk.Frame(self.preview_canvas)
-        self.flashcard_frame.pack(fill="both", expand=True)
-
-        # Create a scrollbar for the frame
-        scrollbar = tk.Scrollbar(self.flashcard_frame, orient="vertical")
+        # Create a scrollbar for the canvas
+        scrollbar = tk.Scrollbar(self.preview_canvas, orient="vertical")
         scrollbar.pack(side="right", fill="y")
 
         # Create a canvas to hold the flashcard entries
-        canvas = tk.Canvas(self.flashcard_frame, bd=0, highlightthickness=0, yscrollcommand=scrollbar.set)
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.config(command=canvas.yview)
+        # self.canvas.pack_forget()
+        self.canvas = tk.Canvas(self.preview_canvas, bd=0, highlightthickness=0, yscrollcommand=scrollbar.set)
+        self.canvas.pack(side="left", fill="both", expand=True)
 
         # Create another frame to hold the flashcard entries inside the canvas
-        flashcard_inner_frame = tk.Frame(canvas)
-        canvas.create_window((0, 0), window=flashcard_inner_frame, anchor="nw")
+        self.flashcard_inner_frame = tk.Frame(self.canvas)
+        self.canvas.create_window((0, 0), window=self.flashcard_inner_frame, anchor="nw")
+        # self.canvas.focus_set()
 
         # Add the flashcard entries to the inner frame
         for idx, flashcard in enumerate(flashcards):
@@ -151,40 +144,40 @@ class AppView(tk.Frame):
             back_text = flashcard["back"]
 
             # Create a new Text widget to hold the front text
-            front_text_widget = tk.Text(flashcard_inner_frame, font=("Arial", 12, "bold"), wrap="word", width=40, height=4)
+            front_text_widget = tk.Text(self.flashcard_inner_frame, font=("Arial", 12, "bold"), wrap="word", width=40, height=4)
             front_text_widget.insert(tk.END, front_text)
-            front_text_widget.grid(row=idx * 2, column=0, padx=10, pady=10, sticky="w")
+            front_text_widget.grid(row=idx * 2, column=0, padx=10, pady=10, sticky="ew")
 
             # Create a new Text widget to hold the back text
-            back_text_widget = tk.Text(flashcard_inner_frame, font=("Arial", 12), wrap="word", width=40, height=4)
+            back_text_widget = tk.Text(self.flashcard_inner_frame, font=("Arial", 12), wrap="word", width=40, height=4)
             back_text_widget.insert(tk.END, back_text)
-            back_text_widget.grid(row=idx * 2 + 1, column=0, padx=10, pady=10, sticky="w")
+            back_text_widget.grid(row=idx * 2 + 1, column=0, padx=10, pady=10, sticky="ew")
 
             # Create a keep checkbox
             keep_var = tk.BooleanVar()
             keep_var.set(True)
-            keep_checkbox = tk.Checkbutton(flashcard_inner_frame, text="Keep", variable=keep_var, font=("Arial", 10))
+            keep_checkbox = tk.Checkbutton(self.canvas, text="Keep", variable=keep_var, font=("Arial", 10))
             keep_checkbox.grid(row=idx * 2, column=2, padx=10, pady=10, sticky="w")
 
             # Append the widgets to the flashcard_widgets list
             flashcard["keep_var"] = keep_var
             flashcard["front"] = front_text_widget
             flashcard["back"] = back_text_widget
+
+        # Update the canvas scroll region after adding all the widgets
+        scrollbar.config(command=self.canvas.yview)
+        self.flashcard_inner_frame.bind("<MouseWheel>", lambda event: self.on_mousewheel(event))
+        self.flashcard_inner_frame.update_idletasks()
+        self.canvas.config(scrollregion=self.canvas.bbox("all"))
         
         # Add a button to add a new flashcard
-        add_flashcard_btn = tk.Button(flashcard_inner_frame, text="Add flashcard", font=("Arial", 10), command=self.add_new_flashcard)
-        add_flashcard_btn.grid(row=len(flashcards) * 2, column=0, padx=10, pady=10, sticky="w")
+        add_flashcard_btn = tk.Button(self.canvas, text="Add flashcard", font=("Arial", 10), command=self.add_new_flashcard)
+        add_flashcard_btn.grid(row=len(flashcards) * 2 + 1, column=0, padx=10, pady=10, sticky="w")
 
         # Add flashcards attribute
         self.flashcard_widgets = flashcards
-
-        # Update the canvas scroll region
-        canvas.config(scrollregion=canvas.bbox("all"))
-
-        # Delay for 100ms and then select all checkboxes
-        self.after(100, self.select_all_checkboxes, flashcard_inner_frame)
         
-        self.generate_text_btn.destroy()
+        self.btn.grid_forget()
         self.add_to_anki_btn = tk.Button(self, text="Add to Anki", command=self.prepare_flashcards_for_anki, font=("Arial", 10))
         self.add_to_anki_btn.grid(row=1, column=1, padx=10, pady=10, sticky="w")
 
@@ -200,18 +193,18 @@ class AppView(tk.Frame):
         # Create a new Text widget to hold the front text
         front_text_widget = tk.Text(self.flashcard_inner_frame, font=("Arial", 12, "bold"), wrap="word", width=40, height=4)
         front_text_widget.insert(tk.END, front_text)
-        front_text_widget.grid(row=idx, column=0, padx=10, pady=10, sticky="w")
+        front_text_widget.grid(row=idx * 2, column=0, padx=10, pady=10, sticky="w")
 
         # Create a new Text widget to hold the back text
         back_text_widget = tk.Text(self.flashcard_inner_frame, font=("Arial", 12), wrap="word", width=40, height=4)
         back_text_widget.insert(tk.END, back_text)
-        back_text_widget.grid(row=idx, column=1, padx=10, pady=10, sticky="w")
+        back_text_widget.grid(row=idx * 2 + 1, column=0, padx=10, pady=10, sticky="w")
 
         # Create a keep checkbox
         keep_var = tk.BooleanVar()
         keep_var.set(True)
         keep_checkbox = tk.Checkbutton(self.flashcard_inner_frame, text="Keep", variable=keep_var, font=("Arial", 10))
-        keep_checkbox.grid(row=idx, column=2, padx=10, pady=10, sticky="w")
+        keep_checkbox.grid(row=idx * 2, column=2, padx=10, pady=10, sticky="w")
 
         # Append the widgets to the flashcard_widgets list
         self.flashcard_widgets.append((front_text_widget, back_text_widget, keep_var))
@@ -258,7 +251,7 @@ class AppView(tk.Frame):
 
             # Dynamically create flashcard entries for each text chunk
             for idx, chunk in enumerate(text_chunks):
-                prompt = "Create easy to remember Anki flashcards from following text. Flash card must make sense and be relevant content. No questions about the uni, course or professor. Return in .json format with 'front' and 'back' fields. Strictly only wrapped in [] json brackets!\n\n"
+                prompt = "Create Anki flashcards from following text. Sometimes text comes from an OCR, accommodate for this. Questions and answers must be in German. No questions about the uni, course or professor. Return in .json format with 'front' and 'back' fields.\n\n"
                 chunk = prompt + chunk
                 self.create_clipboard_btn(chunk, idx)
 
@@ -280,8 +273,7 @@ class AppView(tk.Frame):
                 
                 # Make the last used send to GPT button disappear
                 self.add_to_anki_btn.destroy()
-                self.last_send_to_gpt_button.destroy()
-                self.last_send_to_gpt_button = None
+                self.canvas.pack_forget()
                 self.create_page_btns()
 
                 self.preview_canvas.delete("all")
@@ -290,7 +282,8 @@ class AppView(tk.Frame):
                 self.app_model.clear_selected_pages()
 
                 # Revert to the last displayed page in the PDF file
-                self.display_preview(self.current_page)
+                self.create_preview_canvas()
+                self.display_preview(self.current_page + 1)
 
             else:
                 raise Exception("Error:", success)
@@ -331,7 +324,7 @@ class AppView(tk.Frame):
         Self.loading_label.lower()
 
     def display_preview(self, index):
-        self.flashcard_frame.pack_forget()
+        # self.flashcard_frame.pack_forget()
 
         if 0 <= index < len(self.preview_images):
             img = ImageTk.PhotoImage(self.preview_images[index])
