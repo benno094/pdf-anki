@@ -7,14 +7,16 @@ from functions import send_cards_to_anki
 import subprocess
 import time
 import pytesseract
+import cv2
 from PIL import Image
+import numpy as np
 
 class Actions:
     def __init__(self, app_model):
         self.app_model = app_model
 
     def send_to_gpt(self, prompt):
-        behaviour = "You are an flashcard making assistant.\n\n- Follow the user's requirements carefully and to the letter.\n- First think step-by-step -- describe your plan for what to build in pseudocode, written out in great detail.\n- Then output the flashcards as requested.\n- Minimize any other prose."
+        behaviour = "You are a flashcard making assistant.\nFollow the user's requirements carefully and to the letter."
         completion = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[
@@ -36,48 +38,57 @@ class Actions:
         else:
             raise Exception("Error: No completion response returned.")
 
+    def preprocess_image(self, image):
+        # Scale the image to a larger size to improve OCR accuracy
+        scaled_image = cv2.resize(np.array(image), None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
+
+        # Convert the image to grayscale
+        gray_image = cv2.cvtColor(scaled_image, cv2.COLOR_RGB2GRAY)
+
+        # Apply Gaussian blur to smooth out the background noise
+        blurred_image = cv2.GaussianBlur(gray_image, (5, 5), 0)
+
+        # Apply thresholding
+        _, threshold_image = cv2.threshold(blurred_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+        # Convert the processed image back to PIL Image
+        processed_image = Image.fromarray(threshold_image)
+
+        return processed_image
+
     def generate_text(self, file_path, selected_pages):
         try:
             text = self.app_model.extract_text_from_pdf(file_path)
-            selected_text = [text[i].strip('\n') for i in selected_pages]
+            image_files_list = self.app_model.extract_image_files_from_pdf(file_path, selected_pages)
 
-            max_length = 2048
+            # Create a dictionary to map selected page index to its corresponding image file
+            selected_pages_list = list(selected_pages)
+            image_files_dict = {selected_pages_list[i]: image_files_list[i::len(selected_pages)] for i in range(len(selected_pages))}
 
-            text_chunks = []
             current_chunk = ""
-            if selected_text:
-                for page in selected_text:
-                    if len(current_chunk) + len(page) <= max_length:
-                        current_chunk += page
-                    else:
-                        text_chunks.append(current_chunk)
-                        current_chunk = page
-                if current_chunk:
-                    text_chunks.append(current_chunk)
 
-            # Add OCR text recognition from images
-            image_files = self.app_model.extract_image_files_from_pdf(file_path, selected_pages)
-            if image_files is not None:  # Add check for None
-                for image_file in image_files:
-                    with Image.open(image_file) as img:
-                        ocr_text = pytesseract.image_to_string(img)
+            for index in selected_pages:
+                if index < len(text):
+                    page_text = text[index].strip('\n')
+                    current_chunk += "Page " + str(index + 1) + ":\n\n" + page_text
+                else:
+                    print(f"Error: index {index} is out of range for text list.")
+
+                # Check if there are images for the current page
+                if image_files_dict.get(index) is not None:
+                    for img in image_files_dict[index]:
+                        processed_img = self.preprocess_image(img)
+                        ocr_text = pytesseract.image_to_string(processed_img)
                         if ocr_text:
-                            if len(current_chunk) + len(ocr_text) <= max_length:
-                                current_chunk += ocr_text
-                            else:
-                                text_chunks.append(current_chunk)
-                                current_chunk = ocr_text
-                if current_chunk:
-                    text_chunks.append(current_chunk)
-            else:
-                print("No pictures contained on selected pages")
-            if current_chunk:
-                text_chunks.append(current_chunk)
+                            current_chunk += "\n\n(Generated using OCR)\n" + ocr_text + "\n"
+                else:
+                    print("No images found")
 
-            return text_chunks
+            return current_chunk
 
         except Exception as e:
             print("Error:", e)
+            return ""  # Return an empty string instead of None
 
     def add_to_anki(self, cards):
         try:
