@@ -60,9 +60,7 @@ class AppModel:
                     image_bytes = base_image["image"]
 
                     image = Image.open(io.BytesIO(image_bytes))
-                    image_path = f"{file_path[:-4]}_page{page}_image{image_index}.png"
-                    image.save(image_path)
-                    image_files.append(image_path)
+                    image_files.append(image)
 
         pdf_document.close()
         return image_files
