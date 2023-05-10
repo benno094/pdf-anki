@@ -331,7 +331,7 @@ class AppView(tk.Frame):
         # Check if the next page will exceed the token limit
         file_path = self.file_path.get()
         new_chunk = self.actions.generate_text(file_path, temp_selected_pages)
-        prompt = "Create Anki flashcards from text copied from slides of a presentation. Sometimes text comes from an OCR, accommodate for this. Questions and answers must be in German. No questions about the uni, course or professor. Return in .json format with 'front' and 'back' fields. Flashcards must be wrapped in [] brackets.\n\n"
+        prompt = "Create Anki flashcards from text copied from slides of a presentation. Sometimes text comes from an OCR, accommodate for this. Questions and answers must be in English. No questions about the uni, course or professor. Return in .json format with 'front' and 'back' fields. Flashcards must be wrapped in [] brackets.\n\n"
         new_chunk = prompt + new_chunk
 
         if len(new_chunk) > 2048:
