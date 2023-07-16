@@ -1,88 +1,65 @@
 # actions.py
 
 import tkinter as tk
+import json
 import openai
 import requests
 from functions import send_cards_to_anki
 import subprocess
 import time
-import pytesseract
-import cv2
-from PIL import Image
-import numpy as np
+import re
+import time
 
 class Actions:
-    def __init__(self, app_model):
+    def __init__(self, root, app_model):
+        self.root = root
         self.app_model = app_model
 
     def send_to_gpt(self, prompt):
         behaviour = "You are a flashcard making assistant.\nFollow the user's requirements carefully and to the letter."
-        completion = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {
-                    "role": "system",
-                    "content": behaviour
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            temperature=0.9,
-        )
 
-        response = completion.choices[0].message['content']
-        if response:
-            return response
-        else:
-            raise Exception("Error: No completion response returned.")
+        max_retries = 3
+        retries = 0
+        while retries < max_retries:
+            try:
+                completion = openai.ChatCompletion.create(
+                    model="gpt-3.5-turbo",
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": behaviour
+                        },
+                        {
+                            "role": "user",
+                            "content": prompt
+                        }
+                    ],
+                    temperature=0.9,
+                )
 
-    def preprocess_image(self, image):
-        # Scale the image to a larger size to improve OCR accuracy
-        scaled_image = cv2.resize(np.array(image), None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
+                response = completion.choices[0].message['content']
+                if response:
+                    return response
+                else:
+                    raise Exception("Error: No completion response returned.")
+            except openai.OpenAIError as e:
+                print(f"Error: {e}. Retrying...")
+                retries += 1
+                time.sleep(5)  # Wait for 5 seconds before retrying
 
-        # Convert the image to grayscale
-        gray_image = cv2.cvtColor(scaled_image, cv2.COLOR_RGB2GRAY)
+        raise Exception("Error: Maximum retries reached. GPT servers might be overloaded.")
 
-        # Apply Gaussian blur to smooth out the background noise
-        blurred_image = cv2.GaussianBlur(gray_image, (5, 5), 0)
-
-        # Apply thresholding
-        _, threshold_image = cv2.threshold(blurred_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-
-        # Convert the processed image back to PIL Image
-        processed_image = Image.fromarray(threshold_image)
-
-        return processed_image
-
-    def generate_text(self, file_path, selected_pages):
+    def generate_text(self, file_path, selected_page):
         try:
             text = self.app_model.extract_text_from_pdf(file_path)
-            image_files_list = self.app_model.extract_image_files_from_pdf(file_path, selected_pages)
-
-            # Create a dictionary to map selected page index to its corresponding image file
-            selected_pages_list = list(selected_pages)
-            image_files_dict = {selected_pages_list[i]: image_files_list[i::len(selected_pages)] for i in range(len(selected_pages))}
 
             current_chunk = ""
 
-            for index in selected_pages:
-                if index < len(text):
-                    page_text = text[index].strip('\n')
-                    current_chunk += "Page " + str(index + 1) + ":\n\n" + page_text
-                else:
-                    print(f"Error: index {index} is out of range for text list.")
-
-                # Check if there are images for the current page
-                if image_files_dict.get(index) is not None:
-                    for img in image_files_dict[index]:
-                        processed_img = self.preprocess_image(img)
-                        ocr_text = pytesseract.image_to_string(processed_img)
-                        if ocr_text:
-                            current_chunk += "\n\n(Generated using OCR)\n" + ocr_text + "\n"
-                else:
-                    print("No images found")
+            if selected_page < len(text):
+                page_text = text[selected_page].strip('\n')
+                current_chunk += "Page " + str(selected_page + 1) + ":\n\n" + page_text
+            else:
+                print(f"Error: index {selected_page} is out of range for text list.")
 
             return current_chunk
 
@@ -123,3 +100,48 @@ class Actions:
         frame = tk.Frame(master)
         # Create necessary buttons and widgets and add them to the frame
         return frame
+    
+    def cleanup_response(self, text):
+        try:
+            # Escape inner square brackets
+            response_text_escaped = re.sub(r'(?<=\[)[^\[\]]*(?=\])', self.escape_inner_brackets, text)
+            # print("Response text escaped:", response_text_escaped)
+
+            # Replace curly quotes with standard double quotes
+            response_text_standard_quotes = self.replace_curly_quotes(response_text_escaped)
+            # print("Curly quotes removed:", response_text_standard_quotes)
+
+            # Replace inner double quotes with single quotes
+            response_text_single_quotes = re.sub(r'("(?:[^"\\]|\\.)*")', self.replace_inner_double_quotes, response_text_standard_quotes)
+            # print("Double quotes removed:", response_text_single_quotes)
+
+            # Parse the JSON data
+            response_cards = json.loads(response_text_single_quotes, strict=False)
+            # print("Parsed:", response_cards)
+
+            return response_cards
+
+        except Exception as e:
+            print(f"Error with OpenAI's GPT-3.5 Turbo: {str(e)}")
+
+    def escape_inner_brackets(self, match_obj):
+        inner_text = match_obj.group(0)
+        escaped_text = inner_text.replace('[', '\\[').replace(']', '\\]')
+        return escaped_text
+
+    def replace_curly_quotes(self, text):
+        return text.replace('“', "'").replace('”', "'").replace('„', "'")
+    
+    def replace_inner_double_quotes(self, match_obj):
+        inner_text = match_obj.group(0)
+        # Match the fields containing double quotes
+        pattern = r'(:\s*)("[^"]*")'
+        matches = re.findall(pattern, inner_text)
+
+        # Replace the double quotes inside the fields with single quotes
+        for match in matches:
+            inner_quotes_replaced = match[1].replace('"', "'")
+            inner_text = inner_text.replace(match[1], inner_quotes_replaced)
+
+        return inner_text
+          
