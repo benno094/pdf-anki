@@ -1,19 +1,14 @@
 # actions.py
-
-import tkinter as tk
 import json
 import openai
 import requests
 from functions import send_cards_to_anki
-import subprocess
 import time
 import re
-import time
 
 class Actions:
-    def __init__(self, root, app_model):
+    def __init__(self, root):
         self.root = root
-        self.app_model = app_model
 
     def send_to_gpt(self, prompt):
         behaviour = "You are a flashcard making assistant.\nFollow the user's requirements carefully and to the letter."
@@ -49,27 +44,9 @@ class Actions:
 
         raise Exception("Error: Maximum retries reached. GPT servers might be overloaded.")
 
-    def generate_text(self, file_path, selected_page):
-        try:
-            text = self.app_model.extract_text_from_pdf(file_path)
-
-            current_chunk = ""
-
-            if selected_page < len(text):
-                page_text = text[selected_page].strip('\n')
-                current_chunk += "Page " + str(selected_page + 1) + ":\n\n" + page_text
-            else:
-                print(f"Error: index {selected_page} is out of range for text list.")
-
-            return current_chunk
-
-        except Exception as e:
-            print("Error:", e)
-            return ""  # Return an empty string instead of None
-
     def add_to_anki(self, cards):
         try:
-            # Check if Anki-Connect is running and start it if needed
+            # Check if Anki-Connect is running and get user to start if needed
             api_available = False
             while not api_available:
                 try:
@@ -81,13 +58,8 @@ class Actions:
                     else:
                         time.sleep(1)
                 except:
-                    # Anki-Connect API not available; start Anki if not already running
-                    try:
-                        anki_path = r"C:\Program Files\Anki\anki.exe"  # Change path as needed for your system
-                        subprocess.Popen([anki_path])
-                    except FileNotFoundError:
-                        return False
-                    time.sleep(10)
+                    print("Anki-Connect is not available. Please start Anki with AnkiConnect installed.")
+                    return False
 
             send_cards_to_anki(cards, "MyDeck")
             return True
@@ -95,11 +67,6 @@ class Actions:
         except Exception as e:
             print("Error:", e)
             return False
-
-    def create_widgets(self, master):
-        frame = tk.Frame(master)
-        # Create necessary buttons and widgets and add them to the frame
-        return frame
     
     def cleanup_response(self, text):
         try:

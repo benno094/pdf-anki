@@ -1,18 +1,16 @@
-import tkinter as tk
-from app_model import AppModel
+import streamlit as st
 from app_view import AppView
 from actions import Actions
 
-class Application(tk.Tk):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.title("PDF to Anki")
+class Application:
+    def __init__(self):
+        self.actions = Actions(self)  # Pass the Application instance to Actions
+        self.app_view = AppView(self.actions)  # Pass the Application instance to AppView
 
-        app_model = AppModel()
-        actions = Actions(self, app_model)  # Pass the Application instance to Actions
-        app_view = AppView(self, actions, app_model)  # Pass the Application instance to AppView
-        app_view.grid(row=0, column=0, sticky="nsew")
+    def run(self):
+        st.set_page_config(page_title="PDF to Anki", layout="wide")
+        self.app_view.display()
 
 if __name__ == "__main__":
     app = Application()
-    app.mainloop()
+    app.run()

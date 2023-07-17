@@ -119,6 +119,9 @@ celerybeat.pid
 # SageMath parsed files
 *.sage.py
 
+# streamlit secrets
+.streamlit/
+
 # Environments
 .env
 .venv
