@@ -5,6 +5,7 @@ import requests
 from functions import send_cards_to_anki
 import time
 import re
+import streamlit as st
 
 class Actions:
     def __init__(self, root):
@@ -50,15 +51,13 @@ class Actions:
             api_available = False
             while not api_available:
                 try:
-                    print("Trying API...")
                     response = requests.get("http://localhost:8765")
                     if response.ok:
-                        print("API is available!")
                         api_available = True
                     else:
                         time.sleep(1)
                 except:
-                    print("Anki-Connect is not available. Please start Anki with AnkiConnect installed.")
+                    st.warning('Anki needs to be started with AnkiConnect installed', icon="⚠️")
                     return False
 
             send_cards_to_anki(cards, "MyDeck")

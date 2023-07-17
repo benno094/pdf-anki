@@ -1,4 +1,5 @@
 import requests
+import streamlit as st
 
 def add_note_to_anki(deck_name, front, back):
     # Create the deck if it doesn't already exist
@@ -22,15 +23,14 @@ def add_note_to_anki(deck_name, front, back):
         'params': {'note': note},
         'version': 6
     })
-    print(f'Note added {res.status_code}: {res.text}')
     result = res.json()
 
     return result
 
 def send_cards_to_anki(cards, deck_name):
-    for card in cards:
+    for g, card in enumerate(cards):
         front = card['front']
         back = card['back']
 
-        print(f'Adding card: front: {front} back: {back}')
-        add_note_to_anki(deck_name, front, back)
+        with st.spinner("Adding flashcard #" + str(g + 1) + " to Anki..."):
+            add_note_to_anki(deck_name, front, back)

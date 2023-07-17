@@ -26,16 +26,14 @@ Version 0.2 alpha (It is very buggy; lots of room for user error)
 - Add option to choose title of deck and possibly call up available decks in Anki to choose location
 - Better error management
 - Option to select returned language
-- Change prompt options ()
+- Change prompt options
 
 ### Changelog:
 
 0.2 alpha
 - Changed to Streamlit Web-GUI (This greatly simplified the frontend)
 - Removed image detection
-- Added multi-threading to load flashcards without locking up preview 
 - Shifted flashcards view to show alongside page preview
-- Added status bar to keep user in the loop
 - Using pymupdf instead of pdf2image to reduce reliance on external libraries
 
 0.1 alpha
