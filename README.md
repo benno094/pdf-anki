@@ -4,7 +4,7 @@
 
 PDF to Anki program using GPT3.5-turbo from OpenAI. Streamlit is the web-GUI
 
-Version 0.2 alpha (It is very buggy; lots of room for user error)
+Version 0.3 alpha (It is very buggy; lots of room for user error)
 
 **PDF to Anki can currently only be run locally**
 
@@ -24,6 +24,7 @@ Version 0.2 alpha (It is very buggy; lots of room for user error)
 
 ### To do:
 
+- Option to add card
 - Allow adding a page range
 - Option to select returned language
 - Shift adding of Anki cards to client side
@@ -33,6 +34,9 @@ Version 0.2 alpha (It is very buggy; lots of room for user error)
 - Change prompt options
 
 ### Changelog:
+
+0.3 alpha
+- Shifted all instructions of GPT prompt to system property
 
 0.2 alpha
 - Changed to Streamlit Web-GUI

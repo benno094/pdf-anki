@@ -10,7 +10,7 @@ class Actions:
         self.root = root
 
     def send_to_gpt(self, prompt):
-        behaviour = "You are a flashcard making assistant.\nFollow the user's requirements carefully and to the letter."
+        behaviour = "You are a flashcard making assistant. Follow the user's requirements carefully and to the letter. Use the following principles when responding:\n\n- Create as few as possible Anki flashcards for an exam at university level.\n- Each card is standalone.\n- Do not ask for definitions that are not already on the page.\n- Questions and answers must be in English.\n- No questions about the uni, course, professor or auxiliary slide information.\n- Return in .json format with 'front' and 'back' fields.\n- Flashcards must be wrapped in [] brackets.\n\n"
 
         max_retries = 3
         retries = 0
@@ -73,7 +73,8 @@ class Actions:
             for g, card in enumerate(cards):
                 front = card['front']
                 back = card['back']
-                with st.spinner("Adding flashcard #" + str(g + 1) + " to Anki..."):
+                # Keep user updated on which card is being added
+                with st.spinner("Adding flashcard " + str(g + 1) + "/" + str(st.session_state["flashcards_to_add"]) + " to Anki..."):
                     self.add_note_to_anki(deck_name, front, back)
             st.session_state.sidebar_state = 'collapsed'
 

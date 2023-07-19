@@ -55,15 +55,16 @@ class AppView:
                             if 'flashcards_' + str(i) in st.session_state:
                                 p = i
                                 flashcards = json.loads(json.dumps(st.session_state['flashcards_' + str(i)]))
-                                # Display text input fields for each flashcard entry
 
-                                # Create a tab for each flashcard
-
+                                # Check if GPT returned something usable, else remove entry and throw error
                                 if flashcards:
                                     length = len(flashcards)
                                 else:
+                                    del st.session_state['flashcards_' + str(i)]
                                     with st.sidebar:                        
-                                        st.warning('An error occurred, please regenerate flashcards', icon="⚠️")
+                                        st.warning('GPT flipped out, please regenerate flashcards', icon="⚠️")
+                                        continue
+                                # Create a tab for each flashcard
                                 tabs = st.tabs([f"#{i+1}" for i in range(length)])
                                 if "flashcards_" + str(i) + "_count" not in st.session_state:
                                     st.session_state["flashcards_" + str(i) + "_count"] = length
@@ -95,7 +96,7 @@ class AppView:
                                         no_cards = True
                                     else:
                                         no_cards = False
-                                    st.button(f"Add {st.session_state['flashcards_' + str(p) + '_to_add']} flashcards to Anki", key=f"add_{str(p)}", on_click=self.prepare_and_add_flashcards_to_anki, args=[p], disabled=no_cards)
+                                    st.button(f"Add {st.session_state['flashcards_' + str(p) + '_to_add']} flashcard(s) to Anki", key=f"add_{str(p)}", on_click=self.prepare_and_add_flashcards_to_anki, args=[p], disabled=no_cards)
                                 with col2:
                                     st.button("Regenerate flashcards", key=f"reg_{p}", on_click=self.generate_and_display, args=[p], disabled=True)
                             else:
@@ -129,6 +130,8 @@ class AppView:
         try:
             with st.sidebar:
                 with st.spinner("Adding flashcards"):
+                    # Total cards to add for current page
+                    st.session_state["flashcards_to_add"] = st.session_state["flashcards_" + str(page) + "_to_add"]
                     success = self.actions.add_to_anki(prepared_flashcards)
                     if success:                    
                         # Remove flashcards
@@ -146,10 +149,7 @@ class AppView:
                 st.warning(e, icon="⚠️")
     
     def generate_and_display(self, selected_page):
-        prompt = "Create as few as possible Anki flashcards for an exam at university level. Do not add information that is not given to you. Questions and answers must be in English. No questions about the uni, course or professor. Return in .json format with 'front' and 'back' fields. Flashcards must be wrapped in [] brackets.\n\n"
-
         new_chunk = st.session_state['text_' + str(selected_page)]
-        new_chunk = prompt + new_chunk
 
         try:
             flashcards = self.actions.send_to_gpt(new_chunk)
