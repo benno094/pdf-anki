@@ -2,8 +2,6 @@
 import json
 import openai
 import requests
-from functions import send_cards_to_anki
-import time
 import re
 import streamlit as st
 
@@ -41,9 +39,43 @@ class Actions:
             except openai.OpenAIError as e:
                 print(f"Error: {e}. Retrying...")
                 retries += 1
-                time.sleep(5)  # Wait for 5 seconds before retrying
 
         raise Exception("Error: Maximum retries reached. GPT servers might be overloaded.")
+    
+    def add_note_to_anki(self, deck_name, front, back):
+        # Create the deck if it doesn't already exist
+        res = requests.post('http://localhost:8765', json={
+            'action': 'createDeck',
+            'params': {'deck': deck_name},
+            'version': 6
+        })
+        print(f'Deck created {res.status_code}: {res.text}')
+
+        # Add the note to the deck
+        note = {
+            'deckName': deck_name,
+            'modelName': 'Basic',
+            'fields': {'Front': front, 'Back': back},
+            'options': {'allowDuplicate': False},
+            'tags': [],
+        }
+        res = requests.post('http://localhost:8765', json={
+            'action': 'addNote',
+            'params': {'note': note},
+            'version': 6
+        })
+        result = res.json()
+
+        return result
+
+    def send_cards_to_anki(self, cards, deck_name):
+        with st.sidebar:
+            for g, card in enumerate(cards):
+                front = card['front']
+                back = card['back']
+                with st.spinner("Adding flashcard #" + str(g + 1) + " to Anki..."):
+                    self.add_note_to_anki(deck_name, front, back)
+            st.session_state.sidebar_state = 'collapsed'
 
     def add_to_anki(self, cards):
         try:
@@ -51,17 +83,20 @@ class Actions:
             api_available = False
             while not api_available:
                 try:
-                    response = requests.get("http://localhost:8765")
-                    if response.ok:
-                        api_available = True
-                    else:
-                        time.sleep(1)
+                    with st.sidebar:
+                        with st.spinner("Trying to access AnkiConnect"):
+                            response = requests.get("http://localhost:8765")
+                            if response.ok:
+                                api_available = True
                 except:
-                    st.warning('Anki needs to be started with AnkiConnect installed', icon="⚠️")
+                    with st.sidebar:                        
+                        st.warning('Anki needs to be started with AnkiConnect installed', icon="⚠️")
                     return False
 
-            send_cards_to_anki(cards, "MyDeck")
-            return True
+            with st.sidebar:
+                with st.spinner("API ok, adding flashcards"):
+                    self.send_cards_to_anki(cards, "MyDeck")
+                    return True
 
         except Exception as e:
             print("Error:", e)

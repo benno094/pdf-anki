@@ -12,10 +12,7 @@ class AppView:
         self.actions = actions
 
     def display(self):
-        # Initialize state variables
-        if 'current_page' not in st.session_state:
-            st.session_state['current_page'] = 0
-
+        st.session_state.sidebar_state = 'expanded'
         file = st.file_uploader("Choose a file", type=["pdf"])
 
         if file:
@@ -26,100 +23,142 @@ class AppView:
                 st.session_state['page_count'] = len(doc)
 
                 for i, page in enumerate(doc):
-                    pix = page.get_pixmap(dpi=300)
+                    pix = page.get_pixmap(dpi=100)
                     st.session_state['image_' + str(i)] = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
                     st.session_state['text_' + str(i)] = page.get_text()
-    
-        if "image_0" in st.session_state:           
-
-            # Label
-            st.text(st.session_state.get('status_label', ''))
 
             # Loop through the pages
             for i in range(st.session_state['page_count']):
+                if f"status_label_{i}" not in st.session_state:
+                    st.session_state[f"status_label_{i}"] = ""
                 # Create an expander for each image and its corresponding flashcards
-                with st.expander(f"Page {i + 1}", expanded=True):
-                    col1, col2 = st.columns(2)
-                    # Display the image in the first column
-                    with col1:
-                        st.image(st.session_state['image_' + str(i)])
 
-                    # If flashcards exist for the page, show them and show 'Add to Anki' button
-                    # Otherwise, show the text
-                    with col2:
-                        if 'flashcards_' + str(i) in st.session_state:
-                            p = i
-                            flashcards = json.loads(json.dumps(st.session_state['flashcards_' + str(i)]))
-                            # Display text input fields for each flashcard entry
+                # Allow user to remove page
+                if "page_" + str(i) + "_disabled" not in st.session_state:
+                    # If cards have been added collapse
+                    if "flashcards_" + str(i) + "_added" in st.session_state:
+                        coll = False
+                    else:
+                        coll = True
+                    label = st.session_state[f"status_label_{i}"]
+                    with st.expander(f"Page {i + 1} - {label}", expanded=coll):
+                        col1, col2, col3 = st.columns([0.03, 0.52, 0.4])
+                        with col1:
+                            st.button(":x:", on_click=self.remove_page, args=[i], key=f"page_del_{i}")
+                        # Display the image in the first column
+                        with col2:
+                            st.image(st.session_state['image_' + str(i)])
 
-                            # Create a tab for each flashcard
-                            length = len(flashcards)
-                            tabs = st.tabs([f"Flashcard #{i+1}" for i in range(length)])
-                            st.session_state["flashcards_" + str(i) + "_count"] = length
+                        # If flashcards exist for the page, show them and show 'Add to Anki' button
+                        # Otherwise, show 'generate flashcards' button
+                        with col3:
+                            if 'flashcards_' + str(i) in st.session_state:
+                                p = i
+                                flashcards = json.loads(json.dumps(st.session_state['flashcards_' + str(i)]))
+                                # Display text input fields for each flashcard entry
 
-                            for i, flashcard in enumerate(flashcards):
-                                with tabs[i]:
-                                    st.text_input(f"Front", value=flashcard["front"], key=f"front_{p, i}")
-                                    st.text_area(f"Back", value=flashcard["back"], key=f"back_{p, i}")
+                                # Create a tab for each flashcard
 
-                            col1, col2 = st.columns([0.3,1])
-                            with col1:
-                                st.button(f"Add {length} flashcards to Anki", key=f"add_{str(p)}", on_click=self.prepare_and_add_flashcards_to_anki, args=[p])
-                            with col2:
-                                st.button("Regenerate flashcards", key=f"reg_{p}", on_click=self.generate_and_display, args=[p])
-                        else:
-                            st.button("Create flashcards", key=f"but_{i}", on_click=self.generate_and_display, args=[i])
- 
+                                if flashcards:
+                                    length = len(flashcards)
+                                else:
+                                    with st.sidebar:                        
+                                        st.warning('An error occurred, please regenerate flashcards', icon="⚠️")
+                                tabs = st.tabs([f"#{i+1}" for i in range(length)])
+                                if "flashcards_" + str(i) + "_count" not in st.session_state:
+                                    st.session_state["flashcards_" + str(i) + "_count"] = length
+                                    st.session_state["flashcards_" + str(i) + "_to_add"] = length
+
+                                for i, flashcard in enumerate(flashcards):
+                                    with tabs[i]:
+                                        if f"fc_active_{p, i}" not in st.session_state:
+                                            st.session_state[f"fc_active_{p, i}"] = True
+                                            st.text_input(f"Front", value=flashcard["front"], key=f"front_{p, i}", disabled=False)
+                                            st.text_area(f"Back", value=flashcard["back"], key=f"back_{p, i}", disabled=False)
+
+                                            st.button("Disable flashcard", key=f"del_{p, i}", on_click=self.delete_flashcard, args=[p, i])
+                                        elif f"fc_active_{p, i}" in st.session_state and st.session_state[f"fc_active_{p, i}"] == False:                                        
+                                            st.text_input(f"Front", value=flashcard["front"], key=f"front_{p, i}", disabled=True)
+                                            st.text_area(f"Back", value=flashcard["back"], key=f"back_{p, i}", disabled=True)
+
+                                            st.button("Enable flashcard", key=f"del_{p, i}", on_click=self.enable_flashcard, args=[p, i])
+                                        else:                                        
+                                            st.text_input(f"Front", value=flashcard["front"], key=f"front_{p, i}", disabled=False)
+                                            st.text_area(f"Back", value=flashcard["back"], key=f"back_{p, i}", disabled=False)
+
+                                            st.button("Disable flashcard", key=f"del_{p, i}", on_click=self.delete_flashcard, args=[p, i])
+
+                                col1, col2 = st.columns([0.3,1])
+                                with col1:
+                                    # Blank out 'add to Anki' button if no cards
+                                    if st.session_state["flashcards_" + str(p) + "_to_add"] == 0:
+                                        no_cards = True
+                                    else:
+                                        no_cards = False
+                                    st.button(f"Add {st.session_state['flashcards_' + str(p) + '_to_add']} flashcards to Anki", key=f"add_{str(p)}", on_click=self.prepare_and_add_flashcards_to_anki, args=[p], disabled=no_cards)
+                                with col2:
+                                    st.button("Regenerate flashcards", key=f"reg_{p}", on_click=self.generate_and_display, args=[p], disabled=True)
+                            else:
+                                st.button("Create flashcards", key=f"but_{i}", on_click=self.generate_and_display, args=[i])                        
+        else:
+            if 'image_0' in st.session_state:
+                for key in st.session_state.keys():
+                    del st.session_state[key]
+
+    def delete_flashcard(self, page, num):
+        st.session_state[f"fc_active_{page, num}"] = False
+        st.session_state["flashcards_" + str(page) + "_to_add"] -= 1
+
+    def enable_flashcard(self, page, num):
+        st.session_state[f"fc_active_{page, num}"] = True        
+        st.session_state["flashcards_" + str(page) + "_to_add"] += 1
+
+    def remove_page(self, page):
+        st.session_state["page_" + str(page) + "_disabled"] = True 
+
     def prepare_and_add_flashcards_to_anki(self, page):
         prepared_flashcards = []
 
         for i in range(st.session_state["flashcards_" + str(page) + "_count"]):
-            front_text = st.session_state[f"front_{page, i}"]
-            back_text = st.session_state[f"back_{page, i}"]
+            if st.session_state[f"fc_active_{page, i}"] != False:
+                front_text = st.session_state[f"front_{page, i}"]
+                back_text = st.session_state[f"back_{page, i}"]
 
-            prepared_flashcards.append({"front": front_text, "back": back_text})
+                prepared_flashcards.append({"front": front_text, "back": back_text})
 
         try:
-            success = self.actions.add_to_anki(prepared_flashcards)
-
-            if success:                    
-                # Remove flashcards
-                del st.session_state['flashcards_' + str(page)]
-            else:
-                raise Exception("Error:", success)
+            with st.sidebar:
+                with st.spinner("Adding flashcards"):
+                    success = self.actions.add_to_anki(prepared_flashcards)
+                    if success:                    
+                        # Remove flashcards
+                        del st.session_state['flashcards_' + str(page)]
+                        st.session_state["flashcards_" + str(page) + "_added"] = True
+                        st.session_state[f"fc_active_{page, i}"] = True
+                        st.session_state["flashcards_" + str(page) + "_count"] = 0
+                        st.session_state["flashcards_" + str(page) + "_to_add"] = 0
+                        st.session_state[f"status_label_{page}"] = "Added!"
+                    else:
+                        raise Exception("Error:", success)
 
         except Exception as e:
-            st.session_state['status_label'] = e
-        st.success('Added!')
- 
-    # def toggle_page_selection(self):
-    #     if not self.flashcards[self.current_page]:
-    #         self.app_model.toggle_page_selection(self.current_page)
-    #         file_path = self.file_path.get()
-    #         selected_page = self.app_model.current_page
-
-    #         # Create a new thread
-    #         thread = threading.Thread(target=self.generate_and_display, args=(file_path, selected_page))
-
-    #         # Start the thread
-    #         thread.start()
-
-    #     self.highlight_selected_page()
+            with st.sidebar:                        
+                st.warning(e, icon="⚠️")
     
     def generate_and_display(self, selected_page):
-        prompt = "Create Anki flashcards from text copied from slides of a presentation. Questions and answers must be in English. No questions about the uni, course or professor. Return in .json format with 'front' and 'back' fields. Flashcards must be wrapped in [] brackets.\n\n"
+        prompt = "Create as few as possible Anki flashcards for an exam at university level. Do not add information that is not given to you. Questions and answers must be in English. No questions about the uni, course or professor. Return in .json format with 'front' and 'back' fields. Flashcards must be wrapped in [] brackets.\n\n"
 
         new_chunk = st.session_state['text_' + str(selected_page)]
         new_chunk = prompt + new_chunk
 
         try:
             flashcards = self.actions.send_to_gpt(new_chunk)
-            # self.status_variable("Response received from GPT, cleaning up response", selected_page)
 
             flashcards_clean = self.actions.cleanup_response(flashcards)
 
             st.session_state['flashcards_' + str(selected_page)] = flashcards_clean
 
         except Exception as e:
-            st.session_state['status_label'] = e
+            with st.sidebar:                        
+                st.warning(e, icon="⚠️")
             return
