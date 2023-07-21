@@ -4,7 +4,7 @@ import streamlit as st
 import openai
 import fitz
 from PIL import Image
-import streamlit.components.v1 as components
+# import streamlit.components.v1 as components
 
 openai.api_key == st.secrets["OPENAI_API_KEY"]
 
@@ -23,9 +23,20 @@ class AppView:
         # API = _API(name="Bob")
         # st.write(API)
 
-        file = st.file_uploader("Choose a file", type=["pdf"])
+        self.new_file = False
+        def new_file():
+            self.new_file = True
+
+        file = st.file_uploader("Choose a file", type=["pdf"], on_change=new_file())
 
         if file:
+            # If file changes, delete old data
+            if new_file:                
+                if 'image_0' in st.session_state:
+                    for key in st.session_state.keys():
+                        del st.session_state[key]
+                        self.new_file = False
+
             # Check if previews already exist
             if 'image_0' not in st.session_state:
                 # Load the PDF and its previews and extract text for each page
@@ -167,7 +178,7 @@ Use the following principles when responding:
 - Keep "back" short (bullet points are good)
 - Only use the information that is given to you.
 - Only use each piece of information once.
-- Questions and answers must be in English.
+- Questions and answers must be in German.
 - No questions about the uni, course, professor or auxiliary slide information.
 
 Desired output:
