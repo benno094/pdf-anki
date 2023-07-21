@@ -10,7 +10,7 @@ class Actions:
         self.root = root
 
     def send_to_gpt(self, prompt):
-        behaviour = "You are a flashcard making assistant. Follow the user's requirements carefully and to the letter. Use the following principles when responding:\n\n- Create as few as possible Anki flashcards for an exam at university level.\n- Each card is standalone.\n- Do not ask for definitions that are not already on the page.\n- Questions and answers must be in English.\n- No questions about the uni, course, professor or auxiliary slide information.\n- Return in .json format with 'front' and 'back' fields.\n- Flashcards must be wrapped in [] brackets.\n\n"
+        behaviour = "You are a flashcard making assistant. Follow the user's requirements carefully and to the letter."
 
         max_retries = 3
         retries = 0
@@ -41,7 +41,7 @@ class Actions:
                 retries += 1
 
         raise Exception("Error: Maximum retries reached. GPT servers might be overloaded.")
-    
+
     def add_note_to_anki(self, deck_name, front, back):
         # Create the deck if it doesn't already exist
         res = requests.post('http://localhost:8765', json={
@@ -49,8 +49,6 @@ class Actions:
             'params': {'deck': deck_name},
             'version': 6
         })
-        print(f'Deck created {res.status_code}: {res.text}')
-
         # Add the note to the deck
         note = {
             'deckName': deck_name,
@@ -68,16 +66,6 @@ class Actions:
 
         return result
 
-    def send_cards_to_anki(self, cards, deck_name):
-        with st.sidebar:
-            for g, card in enumerate(cards):
-                front = card['front']
-                back = card['back']
-                # Keep user updated on which card is being added
-                with st.spinner("Adding flashcard " + str(g + 1) + "/" + str(st.session_state["flashcards_to_add"]) + " to Anki..."):
-                    self.add_note_to_anki(deck_name, front, back)
-            st.session_state.sidebar_state = 'collapsed'
-
     def add_to_anki(self, cards):
         try:
             # Check if Anki-Connect is running and get user to start if needed
@@ -91,18 +79,25 @@ class Actions:
                                 api_available = True
                 except:
                     with st.sidebar:                        
-                        st.warning('Anki needs to be started with AnkiConnect installed', icon="⚠️")
+                        st.warning('Anki needs to be started with AnkiConnect installed. Note: adding cards will only work when installed locally.', icon="⚠️")
                     return False
-
+            
             with st.sidebar:
                 with st.spinner("API ok, adding flashcards"):
-                    self.send_cards_to_anki(cards, "MyDeck")
+                    with st.sidebar:
+                        for g, card in enumerate(cards):
+                            front = card['front']
+                            back = card['back']
+                            # Keep user updated on which card is being added
+                            with st.spinner()("Adding flashcard " + str(g + 1) + "/" + str(st.session_state["flashcards_to_add"]) + " to Anki..."):
+                                self.add_note_to_anki("MyDeck", front, back)
+                        st.session_state.sidebar_state = 'collapsed'
                     return True
 
         except Exception as e:
             print("Error:", e)
             return False
-    
+
     def cleanup_response(self, text):
         try:
             # Escape inner square brackets

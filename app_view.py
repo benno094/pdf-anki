@@ -4,6 +4,7 @@ import streamlit as st
 import openai
 import fitz
 from PIL import Image
+import streamlit.components.v1 as components
 
 openai.api_key == st.secrets["OPENAI_API_KEY"]
 
@@ -13,6 +14,15 @@ class AppView:
 
     def display(self):
         st.session_state.sidebar_state = 'expanded'
+
+        # Custom component to call AnkiConnect on client side
+        # _API = components.declare_component(
+        #     "my_component",
+        #     url="http://localhost:3000"
+        # )
+        # API = _API(name="Bob")
+        # st.write(API)
+
         file = st.file_uploader("Choose a file", type=["pdf"])
 
         if file:
@@ -149,7 +159,32 @@ class AppView:
                 st.warning(e, icon="⚠️")
     
     def generate_and_display(self, selected_page):
+        prompt = """
+Use the following principles when responding:
+        
+- Create Anki flashcards for an exam at university level.
+- Each card is standalone.
+- Keep "back" short (bullet points are good)
+- Only use the information that is given to you.
+- Only use each piece of information once.
+- Questions and answers must be in English.
+- No questions about the uni, course, professor or auxiliary slide information.
+
+Desired output:
+[
+{
+"front": "<content>",
+"back": "<content>"
+}, {
+"front": "<content>",
+"back": "<content>"
+} 
+]
+
+"""
+
         new_chunk = st.session_state['text_' + str(selected_page)]
+        new_chunk = prompt + 'Text: """\n' + new_chunk + '\n"""'
 
         try:
             flashcards = self.actions.send_to_gpt(new_chunk)
