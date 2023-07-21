@@ -178,7 +178,7 @@ Use the following principles when responding:
 - Keep "back" short (bullet points are good)
 - Only use the information that is given to you.
 - Only use each piece of information once.
-- Questions and answers must be in German.
+- Questions and answers must be in English.
 - No questions about the uni, course, professor or auxiliary slide information.
 
 Desired output:
