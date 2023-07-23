@@ -161,7 +161,7 @@ class AppView:
             # Total cards to add for current page
             st.session_state["flashcards_to_add"] = st.session_state["flashcards_" + str(page) + "_to_add"]
             success = self.actions.add_to_anki(prepared_flashcards)
-            if success:                    
+            if success:
                 # Add state for flashcards added
                 st.session_state["flashcards_" + str(page) + "_added"] = True
                 st.session_state[f"fc_active_{page, i}"] = True

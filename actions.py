@@ -102,7 +102,7 @@ Desired output:
             return True
 
         except Exception as e:
-            return e
+            return False
 
     def cleanup_response(self, text):
         try:
