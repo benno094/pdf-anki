@@ -95,15 +95,14 @@ Desired output:
             #         return False            
             
             st.toast("Adding flashcards to Anki")
-            for g, card in enumerate(cards):
+            for card in enumerate(cards):
                 front = card['front']
                 back = card['back']
                 API("MyDeck", front, back)
             return True
 
         except Exception as e:
-            print("Error:", e)
-            return False
+            return e
 
     def cleanup_response(self, text):
         try:
