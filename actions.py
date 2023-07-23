@@ -2,7 +2,6 @@
 import json
 import os
 import openai
-import requests
 import re
 import streamlit as st
 import streamlit.components.v1 as components
@@ -93,16 +92,17 @@ Desired output:
             #             api_available = True
             #     except:
             #         return False            
-            
+            print("Cards: ", cards)
             st.toast("Adding flashcards to Anki")
-            for card in enumerate(cards):
+            for card in cards:
                 front = card['front']
                 back = card['back']
                 API("MyDeck", front, back)
             return True
 
         except Exception as e:
-            return False
+            print("Error 1: ", e)
+            raise ValueError(e)
 
     def cleanup_response(self, text):
         try:

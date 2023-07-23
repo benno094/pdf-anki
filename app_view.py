@@ -93,30 +93,29 @@ class AppView:
 
                             for i, flashcard in enumerate(flashcards):
                                 with tabs[i]:
-                                    height = 80
                                     # Default state: display flashcard
                                     if f"fc_active_{p, i}" not in st.session_state:
                                         if st.session_state["flashcards_" + str(p) + "_count"] > 5:
                                             st.session_state[f"fc_active_{p, i}"] = False
                                             st.session_state["flashcards_" + str(p) + "_to_add"] = 0
-                                            st.text_input(f"Front", value=flashcard["front"], key=f"front_{p, i}", disabled=False)
-                                            st.text_area(f"Back", value=flashcard["back"], key=f"back_{p, i}", disabled=False, height=height)
+                                            st.text_input(f"Front", value=flashcard["front"], key=f"front_{p, i}", disabled=True)
+                                            st.text_area(f"Back", value=flashcard["back"], key=f"back_{p, i}", disabled=True)
 
                                             st.button("Enable flashcard", key=f"del_{p, i}", on_click=self.enable_flashcard, args=[p, i])
                                         else:                                           
                                             st.session_state[f"fc_active_{p, i}"] = True
                                             st.text_input(f"Front", value=flashcard["front"], key=f"front_{p, i}", disabled=False)
-                                            st.text_area(f"Back", value=flashcard["back"], key=f"back_{p, i}", disabled=False, height=height)
+                                            st.text_area(f"Back", value=flashcard["back"], key=f"back_{p, i}", disabled=False)
 
                                             st.button("Disable flashcard", key=f"del_{p, i}", on_click=self.disable_flashcard, args=[p, i])
                                     elif f"fc_active_{p, i}" in st.session_state and st.session_state[f"fc_active_{p, i}"] == False:                                        
                                         st.text_input(f"Front", value=flashcard["front"], key=f"front_{p, i}", disabled=True)
-                                        st.text_area(f"Back", value=flashcard["back"], key=f"back_{p, i}", disabled=True, height=height)
+                                        st.text_area(f"Back", value=flashcard["back"], key=f"back_{p, i}", disabled=True)
 
                                         st.button("Enable flashcard", key=f"del_{p, i}", on_click=self.enable_flashcard, args=[p, i])
                                     else:                                    
                                         st.text_input(f"Front", value=flashcard["front"], key=f"front_{p, i}", disabled=False)
-                                        st.text_area(f"Back", value=flashcard["back"], key=f"back_{p, i}", disabled=False, height=height)
+                                        st.text_area(f"Back", value=flashcard["back"], key=f"back_{p, i}", disabled=False)
 
                                         st.button("Disable flashcard", key=f"del_{p, i}", on_click=self.disable_flashcard, args=[p, i])
 
@@ -172,7 +171,8 @@ class AppView:
                 raise Exception("Error:", success)
 
         except Exception as e:
-            with st.sidebar:                        
+            print("Error 2: ", e)
+            with st.sidebar:
                 st.warning(e, icon="⚠️")
 
     # @st.cache_data
