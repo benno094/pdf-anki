@@ -126,7 +126,7 @@ class AppView:
                                     no_cards = True
                                 else:
                                     no_cards = False                                
-                                if "flashcards_" + str(i) + "_added" not in st.session_state:
+                                if "flashcards_" + str(p) + "_added" not in st.session_state:
                                     st.button(f"Add {st.session_state['flashcards_' + str(p) + '_to_add']} flashcard(s) to Anki", key=f"add_{str(p)}", on_click=self.prepare_and_add_flashcards_to_anki, args=[p], disabled=no_cards)
                             # with col2:
                                 # st.button("Regenerate flashcards", key=f"reg_{p}", disabled=True)

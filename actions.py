@@ -21,7 +21,7 @@ class Actions:
 
     def send_to_gpt(self, page):
         prompt = """
-Use the following principles when responding:
+You are receiving the text from one slide of a lecture. Use the following principles when making the flashcards:
 
 - Before doing anything, summarise the text and ask yourself the question "What would I have to know from this slide to pass an exam on the topic".
 - Create Anki flashcards for an exam at university level.
@@ -91,8 +91,7 @@ Desired output:
             #         if response.ok:
             #             api_available = True
             #     except:
-            #         return False            
-            print("Cards: ", cards)
+            #         return False
             st.toast("Adding flashcards to Anki")
             for card in cards:
                 front = card['front']
