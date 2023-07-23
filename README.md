@@ -4,7 +4,7 @@
 
 PDF to Anki program using GPT3.5-turbo from OpenAI. Streamlit is the web-GUI. Shout-out to OpenAI and Streamlit for saving me a ton of work!.
 
-Version 0.4 alpha (Not perfect, but usable).
+Version 0.4 alpha (Not perfect, but usable). Still trying to fix adding flashcards to Anki remotely.
 
 ## Requirements:
 
@@ -32,7 +32,7 @@ Version 0.4 alpha (Not perfect, but usable).
 ### Changelog:
 
 0.4 alpha
-- Can now add without running locally
+- ~~Can now add without running locally~~
 - Can now add page range and change on-the-fly
 - Option to select returned language
 
