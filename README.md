@@ -25,19 +25,19 @@ Version 0.3 alpha (It is very buggy; lots of room for user error)
 ### To do:
 
 - Shift adding of Anki cards to client side
-- Add information on where card comes from (filename, page); as tags?
 - Option to add card
 - Allow adding a page range
 - Option to select returned language
 - Allow user to select regions of slides
 - Add option to choose title of deck and possibly call up available decks in Anki to choose location
-- Better error management
-- Change prompt options
+- Allow user to change prompt options
 - Website doesn't deal well with more than 100 pages
+- Add formatting in response
 
 ### Changelog:
 
 0.3 alpha
+- User is updated on status and errors
 - Improved GPT prompt
 
 0.2 alpha

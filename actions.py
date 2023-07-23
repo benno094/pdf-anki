@@ -1,15 +1,54 @@
 # actions.py
 import json
+import os
 import openai
 import requests
 import re
 import streamlit as st
+import streamlit.components.v1 as components
+
+# Custom component to call AnkiConnect on client side
+parent_dir = os.path.dirname(os.path.abspath(__file__))
+build_dir = os.path.join(parent_dir, "API/frontend/build")
+_API = components.declare_component("my_component", path=build_dir)
+
+def API(deck, front, back):
+    component_value = _API(deck=deck, front=front, back=back)
+    return component_value
 
 class Actions:
     def __init__(self, root):
         self.root = root
 
-    def send_to_gpt(self, prompt):
+    def send_to_gpt(self, page):
+        prompt = """
+Use the following principles when responding:
+
+- Before doing anything, summarise the text and ask yourself the question "What would I have to know from this slide to pass an exam on the topic".
+- Create Anki flashcards for an exam at university level.
+- Each card is standalone.
+- Short answers.
+- Only use the information that is given to you.
+- Only add each piece of information once.
+- Questions and answers must be in English.
+- No questions about the uni, course, professor or auxiliary slide information.
+- If whole slide fits on one flashcard, do that.
+
+Desired output:
+[
+{
+"front": "<content>",
+"back": "<content>"
+}, {
+"front": "<content>",
+"back": "<content>"
+} 
+]
+"""
+        
+        new_chunk = st.session_state['text_' + str(page)]
+        new_chunk = prompt + 'Text: """\n' + new_chunk + '\n"""'
+
         behaviour = "You are a flashcard making assistant. Follow the user's requirements carefully and to the letter."
 
         max_retries = 3
@@ -25,9 +64,10 @@ class Actions:
                         },
                         {
                             "role": "user",
-                            "content": prompt
+                            "content": new_chunk
                         }
                     ],
+                    # TODO: play with temperature
                     temperature=0.9,
                 )
 
@@ -42,57 +82,26 @@ class Actions:
 
         raise Exception("Error: Maximum retries reached. GPT servers might be overloaded.")
 
-    def add_note_to_anki(self, deck_name, front, back):
-        # Create the deck if it doesn't already exist
-        res = requests.post('http://localhost:8765', json={
-            'action': 'createDeck',
-            'params': {'deck': deck_name},
-            'version': 6
-        })
-        # Add the note to the deck
-        note = {
-            'deckName': deck_name,
-            'modelName': 'Basic',
-            'fields': {'Front': front, 'Back': back},
-            'options': {'allowDuplicate': False},
-            'tags': [],
-        }
-        res = requests.post('http://localhost:8765', json={
-            'action': 'addNote',
-            'params': {'note': note},
-            'version': 6
-        })
-        result = res.json()
-
-        return result
-
     def add_to_anki(self, cards):
         try:
-            # Check if Anki-Connect is running and get user to start if needed
-            api_available = False
-            while not api_available:
-                try:
-                    with st.sidebar:
-                        with st.spinner("Trying to access AnkiConnect"):
-                            response = requests.get("http://localhost:8765")
-                            if response.ok:
-                                api_available = True
-                except:
-                    with st.sidebar:                        
-                        st.warning('Anki needs to be started with AnkiConnect installed. Note: adding cards will only work when installed locally.', icon="⚠️")
-                    return False
+            # TODO: implement new API check
+            # api_available = False
+            # while not api_available:
+            #     try:
+            #         response = requests.get("http://localhost:8765")
+            #         if response.ok:
+            #             api_available = True
+            #     except:
+            #         return False
             
-            with st.sidebar:
-                with st.spinner("API ok, adding flashcards"):
-                    with st.sidebar:
-                        for g, card in enumerate(cards):
-                            front = card['front']
-                            back = card['back']
-                            # Keep user updated on which card is being added
-                            with st.spinner()("Adding flashcard " + str(g + 1) + "/" + str(st.session_state["flashcards_to_add"]) + " to Anki..."):
-                                self.add_note_to_anki("MyDeck", front, back)
-                        st.session_state.sidebar_state = 'collapsed'
-                    return True
+            for g, card in enumerate(cards):
+                front = card['front']
+                back = card['back']
+                # Keep user updated on which card is being added
+                # TODO: Change spinners to toast
+                st.toast("Adding flashcard " + str(g + 1) + "/" + str(st.session_state["flashcards_to_add"]) + " to Anki...")
+                API("MyDeck", front, back)
+            return True
 
         except Exception as e:
             print("Error:", e)
