@@ -15,6 +15,7 @@ class AppView:
         # st.session_state.sidebar_state = 'expanded'
         range_good = False
         with st.sidebar:
+            st.session_state["lang"] = st.selectbox("Returned language:", ('English', 'German'))
             col1, col2 = st.columns(2)
             with col1:            
                 start = st.number_input('Starting page', value=1, min_value=1, format='%i')
@@ -62,7 +63,7 @@ class AppView:
                     coll = False
                 else:
                     coll = True
-                label = st.session_state[f"status_label_{i}"]
+                label = "" # st.session_state[f"status_label_{i}"] TODO: Fix
                 with st.expander(f"Page {i + 1} - {label}", expanded=coll):
                     col1, col2 = st.columns([0.6, 0.4])
                     # Display the image in the first column
@@ -92,19 +93,28 @@ class AppView:
 
                             for i, flashcard in enumerate(flashcards):
                                 with tabs[i]:
-                                    height = 60
+                                    height = 80
+                                    # Default state: display flashcard
                                     if f"fc_active_{p, i}" not in st.session_state:
-                                        st.session_state[f"fc_active_{p, i}"] = True
-                                        st.text_input(f"Front", value=flashcard["front"], key=f"front_{p, i}", disabled=False)
-                                        st.text_area(f"Back", value=flashcard["back"], key=f"back_{p, i}", disabled=False, height=height)
+                                        if st.session_state["flashcards_" + str(p) + "_count"] > 5:
+                                            st.session_state[f"fc_active_{p, i}"] = False
+                                            st.session_state["flashcards_" + str(p) + "_to_add"] = 0
+                                            st.text_input(f"Front", value=flashcard["front"], key=f"front_{p, i}", disabled=False)
+                                            st.text_area(f"Back", value=flashcard["back"], key=f"back_{p, i}", disabled=False, height=height)
 
-                                        st.button("Disable flashcard", key=f"del_{p, i}", on_click=self.disable_flashcard, args=[p, i])
+                                            st.button("Enable flashcard", key=f"del_{p, i}", on_click=self.enable_flashcard, args=[p, i])
+                                        else:                                           
+                                            st.session_state[f"fc_active_{p, i}"] = True
+                                            st.text_input(f"Front", value=flashcard["front"], key=f"front_{p, i}", disabled=False)
+                                            st.text_area(f"Back", value=flashcard["back"], key=f"back_{p, i}", disabled=False, height=height)
+
+                                            st.button("Disable flashcard", key=f"del_{p, i}", on_click=self.disable_flashcard, args=[p, i])
                                     elif f"fc_active_{p, i}" in st.session_state and st.session_state[f"fc_active_{p, i}"] == False:                                        
                                         st.text_input(f"Front", value=flashcard["front"], key=f"front_{p, i}", disabled=True)
                                         st.text_area(f"Back", value=flashcard["back"], key=f"back_{p, i}", disabled=True, height=height)
 
                                         st.button("Enable flashcard", key=f"del_{p, i}", on_click=self.enable_flashcard, args=[p, i])
-                                    else:                                        
+                                    else:                                    
                                         st.text_input(f"Front", value=flashcard["front"], key=f"front_{p, i}", disabled=False)
                                         st.text_area(f"Back", value=flashcard["back"], key=f"back_{p, i}", disabled=False, height=height)
 
@@ -123,8 +133,11 @@ class AppView:
                                 # st.button("Regenerate flashcards", key=f"reg_{p}", disabled=True)
         else:
             if 'image_0' in st.session_state:
-                for key in st.session_state.keys():
-                    del st.session_state[key]
+                self.clear_data()
+
+    def clear_data(self):
+        for key in st.session_state.keys():
+            del st.session_state[key]
 
     def disable_flashcard(self, page, num):
         st.session_state[f"fc_active_{page, num}"] = False
@@ -149,8 +162,7 @@ class AppView:
             st.session_state["flashcards_to_add"] = st.session_state["flashcards_" + str(page) + "_to_add"]
             success = self.actions.add_to_anki(prepared_flashcards)
             if success:                    
-                # Remove flashcards
-                del st.session_state['flashcards_' + str(page)]
+                # Add state for flashcards added
                 st.session_state["flashcards_" + str(page) + "_added"] = True
                 st.session_state[f"fc_active_{page, i}"] = True
                 st.session_state["flashcards_" + str(page) + "_count"] = 0

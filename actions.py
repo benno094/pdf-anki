@@ -30,7 +30,7 @@ Use the following principles when responding:
 - Short answers.
 - Only use the information that is given to you.
 - Only add each piece of information once.
-- Questions and answers must be in English.
+- Questions and answers must be in """ + st.session_state["lang"] + """.
 - No questions about the uni, course, professor or auxiliary slide information.
 - If whole slide fits on one flashcard, do that.
 
@@ -92,14 +92,12 @@ Desired output:
             #         if response.ok:
             #             api_available = True
             #     except:
-            #         return False
+            #         return False            
             
+            st.toast("Adding flashcards to Anki")
             for g, card in enumerate(cards):
                 front = card['front']
                 back = card['back']
-                # Keep user updated on which card is being added
-                # TODO: Change spinners to toast
-                st.toast("Adding flashcard " + str(g + 1) + "/" + str(st.session_state["flashcards_to_add"]) + " to Anki...")
                 API("MyDeck", front, back)
             return True
 
