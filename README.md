@@ -1,29 +1,50 @@
-PDF to Anki program using GPT3.5-turbo from OpenAI.
+# PDF to Anki
 
-Version 0.1 (Is very buggy and contains minimal guidance; lots of room for user error)
+## Introduction
 
+PDF to Anki program using GPT3.5-turbo from OpenAI. Streamlit is the web-GUI. Shout-out to OpenAI and Streamlit for saving me a ton of work!.
 
-Requirements:
+Version 0.4 alpha (Not perfect, but usable).
 
-- An OpenAI key (with credits, obviously)
-  - Include an .env file with OPENAI_API_KEY="" in the same directory as the .exe
-- Tesseract installed (https://github.com/UB-Mannheim/tesseract/wiki)
-- AnkiConnect installed (Addon #: 2055492159)
+## Requirements:
 
+- Anki running with AnkiConnect installed (Addon #: 2055492159)
 
-Usage:
+*If compiling to run locally:*
+- An OpenAI key
+    - Needs to be added as OPENAI_API_KEY="[Key here]" in .streamlit\secrets.toml
 
-1. Select a PDF.
-2. Click pages in pdf to be turned into flash cards; they will turn grey. Usually a maximum of two pages can be selected without going over GPT's token limit.
-3. Click "Send text to GPT."
-4. Flash cards created by GPT will be displayed and can then be modified before being added to Anki.
+## Usage:
 
+1. Select a page range and a language for the flashcards.
+2. Choose a PDF file. Cards will automatically be created for each page.
+3. Flash cards are be displayed and can then be modified before being added to Anki.
 
-To do:
+### To do:
 
+- Option to add card
 - Allow user to select regions of slides
-- Make layout prettier!
 - Add option to choose title of deck and possibly call up available decks in Anki to choose location
-- Tell user what is happening
-- Better error management
+- Allow user to change prompt options
+- Website doesn't deal well with more than 100 pages
+- Add formatting in response
+
+### Changelog:
+
+0.4 alpha
+- Can now add without running locally
+- Can now add page range and change on-the-fly
 - Option to select returned language
+
+0.3 alpha
+- User is updated on status and errors
+- Improved GPT prompt
+
+0.2 alpha
+- Changed to Streamlit Web-GUI
+- Removed image detection
+- Shifted flashcards view to show alongside page preview
+- Using pymupdf instead of pdf2image to reduce reliance on external libraries
+
+0.1 alpha
+- First release

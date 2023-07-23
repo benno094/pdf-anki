@@ -1,360 +1,185 @@
 # AppView.py
 import json
-import os
-import re
-import tkinter as tk
-from tkinter import filedialog
-import tkinter.messagebox as messagebox
-import threading
-from PIL import Image, ImageTk
+import streamlit as st
 import openai
+import fitz
+from PIL import Image
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+openai.api_key == st.secrets["OPENAI_API_KEY"]
 
-class AppView(tk.Frame):
-    def __init__(self, master, actions, app_model):
-        super().__init__(master)
+class AppView:
+    def __init__(self, actions):
         self.actions = actions
-        self.app_model = app_model
-        self.flashcard_widgets = []
-        self.page_scrollbar = None
-        self.text_chunk = ""
-        self.waiting_text_item = ""
-        self.clipboard_btn_created = False
-        self.create_widgets()
-        self.create_preview_canvas()
 
-        self.file_path = tk.StringVar()
-        self.file_path.set("")
-        self.selected_pages = set()
+    def display(self):
+        # st.session_state.sidebar_state = 'expanded'
+        range_good = False
+        with st.sidebar:
+            st.session_state["lang"] = st.selectbox("Returned language:", ('English', 'German'))
+            col1, col2 = st.columns(2)
+            with col1:            
+                start = st.number_input('Starting page', value=1, min_value=1, format='%i')
+            with col2:
+                num = st.number_input('Number of pages', value=10, min_value=1, max_value=15, format='%d')
 
-    def create_widgets(self):
-        self.button_frame = tk.Frame(self)
-        self.button_frame.grid(row=0, column=0, padx=10, pady=10, sticky="w")
+            file = st.file_uploader("Choose a file", type=["pdf"])
+            if file:                
+                st.session_state["file_name"] = file.name
+                doc = fitz.open("pdf", file.read())
+                st.session_state['page_count'] = len(doc)
 
-        self.select_file_btn = tk.Button(self.button_frame, text="Select PDF File", command=self.select_file, font=("Arial", 10))
-        self.select_file_btn.grid(row=0, column=0, padx=10, pady=10, sticky="w")
+                if start > st.session_state['page_count']:
+                    st.warning("Start page out of range")
+                    range_good = False
+                else:
+                    range_good = True
 
-        self.loading_label = tk.Label(self)
-        self.loading_label.grid(row=1, column=0, rowspan=5, padx=10, pady=10)
-
-    def create_preview_canvas(self):
-        self.preview_canvas = tk.Canvas(self, relief=tk.SUNKEN)
-        self.preview_canvas.grid(row=1, column=0, padx=(10, 0), pady=10, sticky="nsew")
-
-        # Bind the left mouse button click event to the canvas
-        self.preview_canvas.bind("<Button-1>", self.on_mouse_click)
-
-    def send_txt(self, prompt):
-        self.waiting_text_item = self.preview_canvas.create_text(300, 50, text=prompt, fill="black", font=("Arial", 12), width=500, anchor="center")
+        # TODO: Cache all created flashcards
     
-    def escape_inner_brackets(self, match_obj):
-        inner_text = match_obj.group(0)
-        escaped_text = inner_text.replace('[', '\\[').replace(']', '\\]')
-        return escaped_text
+        if range_good:
+            st.session_state.sidebar_state = 'collapsed'
 
-    def replace_curly_quotes(self, text):
-        return text.replace('“', "'").replace('”', "'").replace('„', "'")
-    
-    def replace_inner_double_quotes(self, match_obj):
-        inner_text = match_obj.group(0)
-        # Match the fields containing double quotes
-        pattern = r'(:\s*)("[^"]*")'
-        matches = re.findall(pattern, inner_text)
+            # Check if previews already exist
+            if 'image_0' not in st.session_state:
+                # Load the PDF and its previews and extract text for each page
+                for i, page in enumerate(doc):
+                    pix = page.get_pixmap(dpi=100)
+                    st.session_state['image_' + str(i)] = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+                    st.session_state['text_' + str(i)] = page.get_text()
 
-        # Replace the double quotes inside the fields with single quotes
-        for match in matches:
-            inner_quotes_replaced = match[1].replace('"', "'")
-            inner_text = inner_text.replace(match[1], inner_quotes_replaced)
+            # Loop through the pages
+            for i in range(start - 1, start + num - 1):
+                if i == st.session_state['page_count']:
+                    break
+                # st.toast("Generating flashcards for page " + str(i + 1) + "/" + str(st.session_state['page_count']))                
+                if "flashcards_" + str(i) not in st.session_state:
+                    self.generate_flashcards(st.session_state["file_name"], i)
 
-        return inner_text
-    
-    def copy_to_clipboard(self):
-            self.preview_canvas.delete("all")
-            self.preview_canvas.delete(self.waiting_text_item)
-            text_prompt = "Waiting for response from servers."
-            self.send_txt(text_prompt)
+                if f"status_label_{i}" not in st.session_state:
+                    st.session_state[f"status_label_{i}"] = ""
+                # Create an expander for each image and its corresponding flashcards
+                # If cards have been added collapse
+                if "flashcards_" + str(i) + "_added" in st.session_state:
+                    coll = False
+                else:
+                    coll = True
+                label = "" # st.session_state[f"status_label_{i}"] TODO: Fix
+                with st.expander(f"Page {i + 1} - {label}", expanded=coll):
+                    col1, col2 = st.columns([0.6, 0.4])
+                    # Display the image in the first column
+                    with col1:
+                        st.image(st.session_state['image_' + str(i)])
 
-            try:
-                print("Text chunk:", self.text_chunk)
-                response_text = self.actions.send_to_gpt(prompt=self.text_chunk)
+                    # If flashcards exist for the page, show them and show 'Add to Anki' button
+                    # Otherwise, show 'generate flashcards' button
+                    with col2:
+                        if 'flashcards_' + str(i) in st.session_state:
+                            p = i
+                            flashcards = json.loads(json.dumps(st.session_state['flashcards_' + str(i)]))
 
-                # Escape inner square brackets
-                response_text_escaped = re.sub(r'(?<=\[)[^\[\]]*(?=\])', self.escape_inner_brackets, response_text)
-                print("Response text escaped:", response_text_escaped)
+                            # Check if GPT returned something usable, else remove entry and throw error
+                            if flashcards:
+                                length = len(flashcards)
+                            else:
+                                del st.session_state['flashcards_' + str(i)]
+                                with st.sidebar:
+                                    st.warning('GPT flipped out, please regenerate flashcards for page' + p, icon="⚠️")
+                                    continue
+                            # Create a tab for each flashcard
+                            tabs = st.tabs([f"#{i+1}" for i in range(length)])
+                            if "flashcards_" + str(i) + "_count" not in st.session_state:
+                                st.session_state["flashcards_" + str(i) + "_count"] = length
+                                st.session_state["flashcards_" + str(i) + "_to_add"] = length
 
-                # Replace curly quotes with standard double quotes
-                response_text_standard_quotes = self.replace_curly_quotes(response_text_escaped)
-                print("Curly quotes removed:", response_text_standard_quotes)
+                            for i, flashcard in enumerate(flashcards):
+                                with tabs[i]:
+                                    height = 80
+                                    # Default state: display flashcard
+                                    if f"fc_active_{p, i}" not in st.session_state:
+                                        if st.session_state["flashcards_" + str(p) + "_count"] > 5:
+                                            st.session_state[f"fc_active_{p, i}"] = False
+                                            st.session_state["flashcards_" + str(p) + "_to_add"] = 0
+                                            st.text_input(f"Front", value=flashcard["front"], key=f"front_{p, i}", disabled=False)
+                                            st.text_area(f"Back", value=flashcard["back"], key=f"back_{p, i}", disabled=False, height=height)
 
-                # Replace inner double quotes with single quotes
-                response_text_single_quotes = re.sub(r'("(?:[^"\\]|\\.)*")', self.replace_inner_double_quotes, response_text_standard_quotes)
-                print("Double quotes removed:", response_text_single_quotes)
+                                            st.button("Enable flashcard", key=f"del_{p, i}", on_click=self.enable_flashcard, args=[p, i])
+                                        else:                                           
+                                            st.session_state[f"fc_active_{p, i}"] = True
+                                            st.text_input(f"Front", value=flashcard["front"], key=f"front_{p, i}", disabled=False)
+                                            st.text_area(f"Back", value=flashcard["back"], key=f"back_{p, i}", disabled=False, height=height)
 
-                # Parse the JSON data
-                response_cards = json.loads(response_text_single_quotes, strict=False)
+                                            st.button("Disable flashcard", key=f"del_{p, i}", on_click=self.disable_flashcard, args=[p, i])
+                                    elif f"fc_active_{p, i}" in st.session_state and st.session_state[f"fc_active_{p, i}"] == False:                                        
+                                        st.text_input(f"Front", value=flashcard["front"], key=f"front_{p, i}", disabled=True)
+                                        st.text_area(f"Back", value=flashcard["back"], key=f"back_{p, i}", disabled=True, height=height)
 
-                # Remove waiting message
-                self.preview_canvas.delete(self.waiting_text_item)
+                                        st.button("Enable flashcard", key=f"del_{p, i}", on_click=self.enable_flashcard, args=[p, i])
+                                    else:                                    
+                                        st.text_input(f"Front", value=flashcard["front"], key=f"front_{p, i}", disabled=False)
+                                        st.text_area(f"Back", value=flashcard["back"], key=f"back_{p, i}", disabled=False, height=height)
 
-                self.display_flashcards(response_cards)
+                                        st.button("Disable flashcard", key=f"del_{p, i}", on_click=self.disable_flashcard, args=[p, i])
 
-            except Exception as e:
-                print(f"Error with OpenAI's GPT-3.5 Turbo: {str(e)}")
-
-    def create_clipboard_btn(self):
-        if not self.clipboard_btn_created:
-            btn_text = "Send text to GPT"
-            self.btn = tk.Button(self.button_frame, text=btn_text, command=self.copy_to_clipboard, font=("Arial", 10))
-            self.btn.grid(row=0, column=1, padx=10, pady=10, sticky="w")
-            self.clipboard_btn_created = True
-    
-    def on_mouse_scroll(self, event):
-        if event.delta > 0:
-            self.prev_page()
+                            col1, col2 = st.columns([0.3,1])
+                            with col1:
+                                # Blank out 'add to Anki' button if no cards
+                                if st.session_state["flashcards_" + str(p) + "_to_add"] == 0:
+                                    no_cards = True
+                                else:
+                                    no_cards = False                                
+                                if "flashcards_" + str(i) + "_added" not in st.session_state:
+                                    st.button(f"Add {st.session_state['flashcards_' + str(p) + '_to_add']} flashcard(s) to Anki", key=f"add_{str(p)}", on_click=self.prepare_and_add_flashcards_to_anki, args=[p], disabled=no_cards)
+                            # with col2:
+                                # st.button("Regenerate flashcards", key=f"reg_{p}", disabled=True)
         else:
-            self.next_page()
+            if 'image_0' in st.session_state:
+                self.clear_data()
 
-    def on_mouse_click(self, event):
-        self.toggle_page_selection()
+    def clear_data(self):
+        for key in st.session_state.keys():
+            del st.session_state[key]
 
-    def on_mousewheel(self, event):
-        # Determine the direction of the scroll
-        scroll_direction = -1 if event.delta > 0 else 1
+    def disable_flashcard(self, page, num):
+        st.session_state[f"fc_active_{page, num}"] = False
+        st.session_state["flashcards_" + str(page) + "_to_add"] -= 1
 
-        # Adjust the view of the canvas accordingly
-        self.canvas.yview_scroll(scroll_direction, "units")
+    def enable_flashcard(self, page, num):
+        st.session_state[f"fc_active_{page, num}"] = True        
+        st.session_state["flashcards_" + str(page) + "_to_add"] += 1
 
-    def display_flashcards(self, flashcards):
-        # Clear the preview pane
-        self.btn.destroy()
-        self.preview_canvas.delete("all")
-
-        # Create a canvas to hold the flashcard entries
-        self.preview_canvas.config(width=1000, height=700) 
-        self.canvas = tk.Canvas(self.preview_canvas, width=1000, height=600, bd=0, highlightthickness=0)
-        self.canvas.pack(side="left", fill="both", expand=True)
-
-        # Create another frame to hold the flashcard entries inside the canvas
-        self.flashcard_inner_frame = tk.Frame(self.canvas)
-        self.canvas.create_window((0, 0), window=self.flashcard_inner_frame, anchor="nw")
-
-        # Add the flashcard entries to the inner frame
-        for idx, flashcard in enumerate(flashcards):
-            front_text = flashcard["front"]
-            back_text = flashcard["back"]
-
-            # Create a new Text widget to hold the front text
-            front_text_widget = tk.Text(self.flashcard_inner_frame, font=("Arial", 12, "bold"), wrap="word", width=80, height=1)
-            front_text_widget.insert(tk.END, front_text)
-            front_text_widget.grid(row=idx * 2, column=0, padx=10, pady=10, sticky="ew")
-
-            # Create a new Text widget to hold the back text
-            back_text_widget = tk.Text(self.flashcard_inner_frame, font=("Arial", 12), wrap="word", width=80, height=4)
-            back_text_widget.insert(tk.END, back_text)
-            back_text_widget.grid(row=idx * 2 + 1, column=0, padx=10, pady=10, sticky="ew")
-
-            # Create a keep checkbox
-            keep_var = tk.BooleanVar()
-            keep_var.set(True)
-            keep_checkbox = tk.Checkbutton(self.flashcard_inner_frame, text="Keep", variable=keep_var, font=("Arial", 10))
-            keep_checkbox.grid(row=idx * 2, column=2, padx=10, pady=10, sticky="w")
-
-            # Append the widgets to the flashcard_widgets list
-            flashcard["keep_var"] = keep_var
-            flashcard["front"] = front_text_widget
-            flashcard["back"] = back_text_widget
-        
-        # Add a button to add a new flashcard
-        add_flashcard_btn = tk.Button(self.flashcard_inner_frame, text="Add flashcard", font=("Arial", 10), command=self.add_new_flashcard)
-        add_flashcard_btn.grid(row=len(flashcards) * 2 + 1, column=0, padx=10, pady=10, sticky="w")
-
-        # Update the canvas scroll region after adding all the widgets
-        self.page_scrollbar.config(command=self.canvas.yview)
-        self.flashcard_inner_frame.bind("<MouseWheel>", lambda event: self.on_mousewheel(event))
-        self.flashcard_inner_frame.update_idletasks()
-        self.canvas.config(scrollregion=self.canvas.bbox("all"))
-
-        # Add flashcards attribute
-        self.flashcard_widgets = flashcards
-
-        self.add_to_anki_btn = tk.Button(self.button_frame, text="Add to Anki", command=self.prepare_flashcards_for_anki, font=("Arial", 10))
-        self.add_to_anki_btn.grid(row=0, column=1, padx=10, pady=10, sticky="w")
-
-    def create_flashcard(self, flashcard, idx):
-        front_text = flashcard["front"]
-        back_text = flashcard["back"]
-
-        # Create a new Text widget to hold the front text
-        front_text_widget = tk.Text(self.flashcard_inner_frame, font=("Arial", 12, "bold"), wrap="word", width=80, height=1)
-        front_text_widget.insert(tk.END, front_text)
-        front_text_widget.grid(row=idx * 2, column=0, padx=10, pady=10, sticky="w")
-
-        # Create a new Text widget to hold the back text
-        back_text_widget = tk.Text(self.flashcard_inner_frame, font=("Arial", 12), wrap="word", width=80, height=4)
-        back_text_widget.insert(tk.END, back_text)
-        back_text_widget.grid(row=idx * 2 + 1, column=0, padx=10, pady=10, sticky="w")
-
-        # Create a keep checkbox
-        keep_var = tk.BooleanVar()
-        keep_var.set(True)
-        keep_checkbox = tk.Checkbutton(self.flashcard_inner_frame, text="Keep", variable=keep_var, font=("Arial", 10))
-        keep_checkbox.grid(row=idx * 2, column=2, padx=10, pady=10, sticky="w")
-
-        # Append the widgets to the flashcard_widgets list
-        self.flashcard_widgets.append({"front": front_text_widget, "back": back_text_widget, "keep_var": keep_var})
-    
-    def add_new_flashcard(self):
-        new_flashcard_idx = len(self.flashcard_widgets)
-        flashcard = {"front": "", "back": ""}
-        self.create_flashcard(flashcard, new_flashcard_idx)
-
-        # Update the Add flashcard button position
-        add_flashcard_btn = self.flashcard_inner_frame.children["!button"]
-        add_flashcard_btn.grid_forget()
-        add_flashcard_btn.grid(row=new_flashcard_idx * 2 + 2, column=0, padx=10, pady=10, sticky="w")
-
-        # Update the canvas scroll region
-        self.flashcard_inner_frame.update_idletasks()
-        self.canvas.config(scrollregion=self.canvas.bbox("all"))
-
-    def prepare_flashcards_for_anki(self):
+    def prepare_and_add_flashcards_to_anki(self, page):
         prepared_flashcards = []
 
-        for flashcard in self.flashcard_widgets:
-            if flashcard['keep_var'].get():
-                front_text = flashcard['front'].get("1.0", tk.END).strip()
-                back_text = flashcard['back'].get("1.0", tk.END).strip()
+        for i in range(st.session_state["flashcards_" + str(page) + "_count"]):
+            if st.session_state[f"fc_active_{page, i}"] != False:
+                front_text = st.session_state[f"front_{page, i}"]
+                back_text = st.session_state[f"back_{page, i}"]
 
                 prepared_flashcards.append({"front": front_text, "back": back_text})
 
-        # Convert the prepared flashcards to JSON and send to add_to_anki_ui
-        self.prepared_flashcards_json = json.dumps(prepared_flashcards)
-        self.add_to_anki_ui()
-
-    def add_to_anki_ui(self):
         try:
-            response_text = self.prepared_flashcards_json
-            cards = json.loads(response_text)
-            success = self.actions.add_to_anki(cards)
-
-            if success:
-                messagebox.showinfo("Success!", "Your notes have been added to the deck.")
-                
-                self.clipboard_btn_created = False
-                self.add_to_anki_btn.destroy()
-                self.canvas.pack_forget()
-
-                self.preview_canvas.delete("all")
-
-                # Untoggle all selected pages
-                self.app_model.clear_selected_pages()
-
-                # Revert to the last displayed page in the PDF file
-                self.create_preview_canvas()
-                self.display_preview(self.current_page + 1)
-
+            # Total cards to add for current page
+            st.session_state["flashcards_to_add"] = st.session_state["flashcards_" + str(page) + "_to_add"]
+            success = self.actions.add_to_anki(prepared_flashcards)
+            if success:                    
+                # Add state for flashcards added
+                st.session_state["flashcards_" + str(page) + "_added"] = True
+                st.session_state[f"fc_active_{page, i}"] = True
+                st.session_state["flashcards_" + str(page) + "_count"] = 0
+                st.session_state["flashcards_" + str(page) + "_to_add"] = 0
+                st.session_state[f"status_label_{page}"] = "Added!"
             else:
                 raise Exception("Error:", success)
 
         except Exception as e:
-            messagebox.showerror("Error!", str(e))
+            with st.sidebar:                        
+                st.warning(e, icon="⚠️")
 
-    def select_file(self):
-        file_path = filedialog.askopenfilename(filetypes=[("PDF Files", "*.pdf")])
+    # @st.cache_data
+    def generate_flashcards(_self, file_name, page):
+        # TODO: Add instructions for the session, as added by openai
+        flashcards = _self.actions.send_to_gpt(page)
 
-        if file_path:
-            self.file_path.set(file_path)
+        flashcards_clean = _self.actions.cleanup_response(flashcards)
 
-            # Start loading animation
-            self.start_loading_animation()
-
-            # Create a new thread to load the PDF and its previews
-            threading.Thread(target=self.load_pdf_and_previews, args=(file_path,)).start()
- 
-    def load_pdf_and_previews(self, file_path):
-        self.preview_images = self.app_model.create_preview_images(file_path)
-        self.app_model.preview_images = self.preview_images
-        self.current_page = 0
-
-        # Stop the loading animation and display the preview
-        # self.preview_canvas.delete("all")
-        self.display_preview(self.current_page)
-
-    def start_loading_animation(self):
-        self.loading_gif = tk.PhotoImage(file="loading.gif")  # Make sure to have a GIF file named "loading.gif" in the same folder as your script
-        self.loading_label.config(image=self.loading_gif)
-        self.loading_label.image = self.loading_gif
-        self.loading_label.lift()
-
-    def stop_loading_animation(self):
-        self.loading_label.lower()
-
-    def display_preview(self, index):
-
-        if 0 <= index < len(self.preview_images):
-            self.preview_canvas.delete("all")
-            self.highlight_selected_page()
-
-            self.preview_canvas.grid(row=1, column=0, padx=(10, 0), pady=10, sticky="nsew")
-
-            # Configure the preview canvas to use the scrollbar
-            self.page_scrollbar = tk.Scrollbar(self, orient="vertical", command=self.preview_canvas.yview)
-            self.page_scrollbar.grid(row=1, column=1, padx=10, pady=10, sticky="ns")
-            self.preview_canvas.bind("<MouseWheel>", self.on_mouse_scroll)
-
-            # Update the size of the preview canvas
-            img_width, img_height = self.preview_images[index].size
-            self.preview_canvas.config(width=img_width, height=img_height) 
-
-            # Bind arrow keys to methods
-            self.preview_canvas.bind_all("<Up>", lambda _: self.prev_page())
-            self.preview_canvas.bind_all("<Down>", lambda _: self.next_page())
-
-        self.stop_loading_animation()
-
-    def prev_page(self):
-        self.app_model.prev_page()
-        self.current_page = self.app_model.current_page
-        self.display_preview(self.current_page)
-
-    def next_page(self):
-        self.app_model.next_page()
-        self.current_page = self.app_model.current_page
-        self.display_preview(self.current_page)
-
-    def toggle_page_selection(self):
-        # Temporarily toggle the page selection to check if the token limit will be exceeded
-        self.app_model.toggle_page_selection()
-        temp_selected_pages = self.app_model.selected_pages
-
-        # Check if the next page will exceed the token limit
-        file_path = self.file_path.get()
-        new_chunk = self.actions.generate_text(file_path, temp_selected_pages)
-        prompt = "Create Anki flashcards from text copied from slides of a presentation. Sometimes text comes from an OCR, accommodate for this. Questions and answers must be in English. No questions about the uni, course or professor. Return in .json format with 'front' and 'back' fields. Flashcards must be wrapped in [] brackets.\n\n"
-        new_chunk = prompt + new_chunk
-
-        if len(new_chunk) > 2048:
-            messagebox.showwarning("Token Limit Reached", "Adding this page will exceed the 2048 token limit. Please submit current selection.")
-            self.app_model.toggle_page_selection()  # Revert the temporary page selection
-            self.selected_pages = self.selected_pages
-        else:
-            self.selected_pages = temp_selected_pages
-            self.text_chunk = new_chunk
-
-        self.highlight_selected_page()
-        print("Current clipboard:", self.text_chunk)
-
-        # Call create_clipboard_btn() method with the text_chunk
-        self.create_clipboard_btn()
-
-    def highlight_selected_page(self):
-        if self.app_model.is_page_selected(self.current_page):
-            overlay = Image.new("RGBA", self.preview_images[self.current_page].size, (128, 128, 128, 128))
-            img_with_overlay = Image.alpha_composite(self.preview_images[self.current_page].convert("RGBA"), overlay)
-            img = ImageTk.PhotoImage(img_with_overlay)
-        else:
-            img = ImageTk.PhotoImage(self.preview_images[self.current_page])
-
-        self.preview_canvas.create_image(0, 0, anchor=tk.NW, image=img)
-        self.preview_canvas.image = img
+        st.session_state['flashcards_' + str(page)] = flashcards_clean
