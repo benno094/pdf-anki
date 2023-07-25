@@ -27,7 +27,8 @@ You are receiving the text from one slide of a lecture. Use the following princi
 - Create Anki flashcards for an exam at university level.
 - Each card is standalone.
 - Short answers.
-- Only use the information that is given to you.
+- All information on slide needs to be used and only use the information that is on the slide.
+- Answers should be on the back and not included in the question.
 - Only add each piece of information once.
 - Questions and answers must be in """ + st.session_state["lang"] + """.
 - No questions about the uni, course, professor or auxiliary slide information.
@@ -36,12 +37,13 @@ You are receiving the text from one slide of a lecture. Use the following princi
 Desired output:
 [
 {
-"front": "<content>",
-"back": "<content>"
-}, {
-"front": "<content>",
-"back": "<content>"
-} 
+"front": "<content1>",
+"back": "<content1>"
+},
+{
+"front": "<content2>",
+"back": "<content2>"
+}
 ]
 """
         
@@ -93,14 +95,15 @@ Desired output:
             #     except:
             #         return False
             st.toast("Adding flashcards to Anki")
+            st.write("Cards are being sent", cards)
             for card in cards:
                 front = card['front']
                 back = card['back']
-                API("MyDeck", front, back)
+                result = API("MyDeck", front, back)
+                st.write("Looking good: ", result)
             return True
 
         except Exception as e:
-            print("Error 1: ", e)
             raise ValueError(e)
 
     def cleanup_response(self, text):

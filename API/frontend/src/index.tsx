@@ -40,8 +40,8 @@ async function onRender(event: Event): Promise<void> {
   let back = data.args["back"]
 
   try {    
-    await addFlashcard(deck, front, back);
-    Streamlit.setComponentValue("Success")
+    const success = await addFlashcard(deck, front, back);
+    Streamlit.setComponentValue(`Worked!, ${success}`)
   } catch (error) {
     Streamlit.setComponentValue("Error")
   }

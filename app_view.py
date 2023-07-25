@@ -15,7 +15,7 @@ class AppView:
         # st.session_state.sidebar_state = 'expanded'
         range_good = False
         with st.sidebar:
-            st.session_state["lang"] = st.selectbox("Returned language:", ('English', 'German'))
+            st.session_state["lang"] = st.selectbox("Returned language", ('English', 'German'), on_change=self.clear_data)
             col1, col2 = st.columns(2)
             with col1:            
                 start = st.number_input('Starting page', value=1, min_value=1, format='%i')
@@ -37,8 +37,6 @@ class AppView:
         # TODO: Cache all created flashcards
     
         if range_good:
-            st.session_state.sidebar_state = 'collapsed'
-
             # Check if previews already exist
             if 'image_0' not in st.session_state:
                 # Load the PDF and its previews and extract text for each page
@@ -82,9 +80,8 @@ class AppView:
                                 length = len(flashcards)
                             else:
                                 del st.session_state['flashcards_' + str(i)]
-                                with st.sidebar:
-                                    st.warning('GPT flipped out, please regenerate flashcards for page' + p, icon="⚠️")
-                                    continue
+                                st.toast('GPT flipped out, please regenerate flashcards for page ' + str(p), icon="⚠️")
+                                continue
                             # Create a tab for each flashcard
                             tabs = st.tabs([f"#{i+1}" for i in range(length)])
                             if "flashcards_" + str(i) + "_count" not in st.session_state:
@@ -119,7 +116,7 @@ class AppView:
 
                                         st.button("Disable flashcard", key=f"del_{p, i}", on_click=self.disable_flashcard, args=[p, i])
 
-                            col1, col2 = st.columns([0.3,1])
+                            col1, col2 = st.columns([0.4,1])
                             with col1:
                                 # Blank out 'add to Anki' button if no cards
                                 if st.session_state["flashcards_" + str(p) + "_to_add"] == 0:
@@ -168,10 +165,9 @@ class AppView:
                 st.session_state["flashcards_" + str(page) + "_to_add"] = 0
                 st.session_state[f"status_label_{page}"] = "Added!"
             else:
-                raise Exception("Error:", success)
+                raise Exception("Error 2:", success)
 
         except Exception as e:
-            print("Error 2: ", e)
             with st.sidebar:
                 st.warning(e, icon="⚠️")
 
