@@ -80,7 +80,7 @@ class AppView:
                                 length = len(flashcards)
                             else:
                                 del st.session_state['flashcards_' + str(i)]
-                                st.toast('GPT flipped out, please regenerate flashcards for page ' + str(p), icon="⚠️")
+                                # st.toast('GPT flipped out, please regenerate flashcards for page ' + str(p), icon="⚠️")
                                 continue
                             # Create a tab for each flashcard
                             tabs = st.tabs([f"#{i+1}" for i in range(length)])

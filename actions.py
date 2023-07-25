@@ -94,7 +94,6 @@ Desired output:
             #             api_available = True
             #     except:
             #         return False
-            st.toast("Adding flashcards to Anki")
             st.write("Cards are being sent", cards)
             for card in cards:
                 front = card['front']
