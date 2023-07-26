@@ -1,11 +1,8 @@
 # AppView.py
 import json
 import streamlit as st
-import openai
 import fitz
 from PIL import Image
-
-openai.api_key == st.secrets["OPENAI_API_KEY"]
 
 class AppView:
     def __init__(self, actions):
