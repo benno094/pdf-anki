@@ -48,18 +48,19 @@ class AppView:
                     break
                 # st.toast("Generating flashcards for page " + str(i + 1) + "/" + str(st.session_state['page_count']))                
                 if "flashcards_" + str(i) not in st.session_state:
-                    self.generate_flashcards(st.session_state["file_name"], i)
+                    self.generate_flashcards(i)
 
-                if f"status_label_{i}" not in st.session_state:
-                    st.session_state[f"status_label_{i}"] = ""
                 # Create an expander for each image and its corresponding flashcards
                 # If cards have been added collapse
                 if "flashcards_" + str(i) + "_added" in st.session_state:
                     coll = False
                 else:
                     coll = True
-                label = "" # st.session_state[f"status_label_{i}"] TODO: Fix
-                with st.expander(f"Page {i + 1} - {label}", expanded=coll):
+                if f"status_label_{i}" in st.session_state:
+                    label = st.session_state[f"status_label_{i}"]
+                else:
+                    label = ""
+                with st.expander(f"Page {i + 1}/{st.session_state['page_count']}{label}", expanded=coll):
                     col1, col2 = st.columns([0.6, 0.4])
                     # Display the image in the first column
                     with col1:
@@ -77,7 +78,7 @@ class AppView:
                                 length = len(flashcards)
                             else:
                                 del st.session_state['flashcards_' + str(i)]
-                                # st.toast('GPT flipped out, please regenerate flashcards for page ' + str(p), icon="⚠️")
+                                st.button("Regenerate flashcards", key=f"reg_{i}", on_click = self.generate_flashcards(i))
                                 continue
                             # Create a tab for each flashcard
                             tabs = st.tabs([f"#{i+1}" for i in range(length)])
@@ -122,8 +123,10 @@ class AppView:
                                     no_cards = False                                
                                 if "flashcards_" + str(p) + "_added" not in st.session_state:
                                     st.button(f"Add {st.session_state['flashcards_' + str(p) + '_to_add']} flashcard(s) to Anki", key=f"add_{str(p)}", on_click=self.prepare_and_add_flashcards_to_anki, args=[p], disabled=no_cards)
-                            # with col2:
-                                # st.button("Regenerate flashcards", key=f"reg_{p}", disabled=True)
+                            with col2:
+                                if "flashcards_" + str(p) + "_tags" not in st.session_state:
+                                    st.session_state["flashcards_" + str(p) + "_tags"] = st.session_state["file_name"].replace(' ', '_').replace('.pdf', '') + "_page_" + str(p + 1)
+                                st.text_input("Tag:", value = st.session_state["flashcards_" + str(p) + "_tags"], key = f"tag_{str(p)}")
         else:
             if 'image_0' in st.session_state:
                 self.clear_data()
@@ -153,7 +156,7 @@ class AppView:
         try:
             # Total cards to add for current page
             st.session_state["flashcards_to_add"] = st.session_state["flashcards_" + str(page) + "_to_add"]
-            success = self.actions.add_to_anki(prepared_flashcards)
+            success = self.actions.add_to_anki(prepared_flashcards, page)
             if success:
                 # Add state for flashcards added
                 st.session_state["flashcards_" + str(page) + "_added"] = True
@@ -169,10 +172,10 @@ class AppView:
                 st.warning(e, icon="⚠️")
 
     # @st.cache_data
-    def generate_flashcards(_self, file_name, page):
+    def generate_flashcards(self, page):
         # TODO: Add instructions for the session, as added by openai
-        flashcards = _self.actions.send_to_gpt(page)
+        flashcards = self.actions.send_to_gpt(page)
 
-        flashcards_clean = _self.actions.cleanup_response(flashcards)
+        flashcards_clean = self.actions.cleanup_response(flashcards)
 
         st.session_state['flashcards_' + str(page)] = flashcards_clean

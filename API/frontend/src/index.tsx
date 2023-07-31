@@ -1,6 +1,6 @@
 import { Streamlit, RenderData } from "streamlit-component-lib"
 
-async function addFlashcard(deck: string, front: string, back: string) {
+async function addFlashcard(deck: string, front: string, back: string, tags: string) {
   try {
     // Add the note to the deck
     const note = {
@@ -8,13 +8,13 @@ async function addFlashcard(deck: string, front: string, back: string) {
       modelName: 'Basic',
       fields: { Front: front, Back: back },
       options: { allowDuplicate: false },
-      tags: [],
+      tags: [tags],
     };
     const addNoteResponse = await fetch('http://localhost:8765', {
       method: 'POST',
       body: JSON.stringify({
-        action: 'addNote',
-        params: { note: note },
+        action: 'requestPermission',
+        // params: { note: note },
         version: 6,
       }),
     });
@@ -38,9 +38,10 @@ async function onRender(event: Event): Promise<void> {
   let deck = data.args["deck"]
   let front = data.args["front"]
   let back = data.args["back"]
+  let tags = data.args["tags"]
 
   try {    
-    const success = await addFlashcard(deck, front, back);
+    const success = await addFlashcard(deck, front, back, tags);
     Streamlit.setComponentValue(`Worked!, ${success}`)
   } catch (error) {
     Streamlit.setComponentValue("Error")

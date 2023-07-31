@@ -13,8 +13,8 @@ parent_dir = os.path.dirname(os.path.abspath(__file__))
 build_dir = os.path.join(parent_dir, "API/frontend/build")
 _API = components.declare_component("my_component", path=build_dir)
 
-def API(deck, front, back):
-    component_value = _API(deck=deck, front=front, back=back)
+def API(deck, front, back, tags):
+    component_value = _API(deck=deck, front=front, back=back, tags=tags)
     return component_value
 
 class Actions:
@@ -85,7 +85,7 @@ Desired output:
 
         raise Exception("Error: Maximum retries reached. GPT servers might be overloaded.")
 
-    def add_to_anki(self, cards):
+    def add_to_anki(self, cards, page):
         try:
             # TODO: implement new API check
             # api_available = False
@@ -96,11 +96,13 @@ Desired output:
             #             api_available = True
             #     except:
             #         return False
-            st.write("Cards are being sent", cards)
+            
+            # st.write("Cards are being sent", cards)
             for card in cards:
                 front = card['front']
                 back = card['back']
-                result = API("MyDeck", front, back)
+                tags = st.session_state["flashcards_" + str(page) + "_tags"]
+                result = API("MyDeck", front, back, tags)
                 st.write("Looking good: ", result)
             return True
 
