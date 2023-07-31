@@ -13,8 +13,8 @@ async function addFlashcard(deck: string, front: string, back: string, tags: str
     const addNoteResponse = await fetch('http://localhost:8765', {
       method: 'POST',
       body: JSON.stringify({
-        action: 'requestPermission',
-        // params: { note: note },
+        action: 'addNote',
+        params: { note: note },
         version: 6,
       }),
     });

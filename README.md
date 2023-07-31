@@ -26,7 +26,6 @@ Version 0.45 alpha (Not perfect, but usable). Still trying to fix adding flashca
 - Allow user to select regions of slides
 - Add option to choose title of deck and possibly call up available decks in Anki to choose location
 - Allow user to change prompt options
-- Website doesn't deal well with more than 100 pages
 - Add formatting in response
 
 ### Changelog:
