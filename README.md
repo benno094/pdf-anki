@@ -35,6 +35,7 @@ Version 0.45 alpha (Not perfect, but usable).
 0.45 alpha
 - Can now add flashcards to Anki without running locally
 - Added filename and page as tag
+- Max. uploaded file size reduced to 50MB
 
 0.4 alpha
 - Can now add page range and change on-the-fly

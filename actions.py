@@ -102,8 +102,8 @@ Desired output:
                 front = card['front']
                 back = card['back']
                 tags = st.session_state["flashcards_" + str(page) + "_tags"]
-                result = API("MyDeck", front, back, tags)
-                st.write("Looking good: ", result)
+                API("MyDeck", front, back, tags)
+                # st.write("Looking good: ", result)
             return True
 
         except Exception as e:

@@ -19,7 +19,7 @@ class AppView:
             with col2:
                 num = st.number_input('Number of pages', value=10, min_value=1, max_value=15, format='%d')
 
-            file = st.file_uploader("Choose a file", type=["pdf"])
+            file = st.file_uploader("Choose a file", type=["pdf"], on_change=self.clear_data)
             if file:                
                 st.session_state["file_name"] = file.name
                 doc = fitz.open("pdf", file.read())
@@ -56,11 +56,12 @@ class AppView:
                     coll = False
                 else:
                     coll = True
+                # TODO: Fix added label
                 if f"status_label_{i}" in st.session_state:
                     label = st.session_state[f"status_label_{i}"]
                 else:
                     label = ""
-                with st.expander(f"Page {i + 1}/{st.session_state['page_count']}{label}", expanded=coll):
+                with st.expander(f"Page {i + 1}/{st.session_state['page_count']}", expanded=coll):
                     col1, col2 = st.columns([0.6, 0.4])
                     # Display the image in the first column
                     with col1:
