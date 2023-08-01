@@ -1,8 +1,8 @@
 import { Streamlit, RenderData } from "streamlit-component-lib"
 
+// Adds note to a deck
 async function addFlashcard(deck: string, front: string, back: string, tags: string) {
   try {
-    // Add the note to the deck
     const note = {
       deckName: deck,
       modelName: 'Basic',
@@ -24,6 +24,25 @@ async function addFlashcard(deck: string, front: string, back: string, tags: str
     throw new Error('Error: Unable to reach the server');
   }
 }
+
+// Checks if server reachable
+async function reqPerm() {
+  try {
+    // Add the note to the deck
+    const addNoteResponse = await fetch('http://localhost:8765', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'requestPermission',
+        version: 6,
+      }),
+    });
+
+    await addNoteResponse.json();
+  } catch (error) {
+    return false
+  }
+}
+
 /**
  * The component's render function. This will be called immediately after
  * the component is initially loaded, and then again every time the
