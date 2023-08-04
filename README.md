@@ -4,11 +4,12 @@
 
 PDF to Anki program using GPT3.5-turbo from OpenAI. Streamlit is the web-GUI. Shout-out to OpenAI and Streamlit for saving me a ton of work!.
 
-Version 0.4 alpha (Not perfect, but usable). Still trying to fix adding flashcards to Anki remotely.
+Version 0.45 alpha (Not perfect, but usable).
 
 ## Requirements:
 
 - Anki running with AnkiConnect installed (Addon #: 2055492159)
+    - Add "https://pdf-anki-ddzhwhzfw5t.streamlit.app" to "webCorsOriginList" under Tools -> Addons -> Config, then restart Anki.
 
 *If compiling to run locally:*
 - An OpenAI key
@@ -26,13 +27,18 @@ Version 0.4 alpha (Not perfect, but usable). Still trying to fix adding flashcar
 - Allow user to select regions of slides
 - Add option to choose title of deck and possibly call up available decks in Anki to choose location
 - Allow user to change prompt options
-- Website doesn't deal well with more than 100 pages
 - Add formatting in response
 
 ### Changelog:
 
+0.45 alpha
+- Improved memory usage
+- Can now add flashcards to Anki without running locally
+- Added filename and page as tag
+- Max. uploaded file size reduced to 50MB
+
 0.4 alpha
-- ~~Can now add without running locally~~
+- Can now add without running locally
 - Can now add page range and change on-the-fly
 - Option to select returned language
 

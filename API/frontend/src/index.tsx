@@ -1,14 +1,14 @@
 import { Streamlit, RenderData } from "streamlit-component-lib"
 
-async function addFlashcard(deck: string, front: string, back: string) {
+// Adds note to a deck
+async function addFlashcard(deck: string, front: string, back: string, tags: string) {
   try {
-    // Add the note to the deck
     const note = {
       deckName: deck,
       modelName: 'Basic',
       fields: { Front: front, Back: back },
       options: { allowDuplicate: false },
-      tags: [],
+      tags: [tags],
     };
     const addNoteResponse = await fetch('http://localhost:8765', {
       method: 'POST',
@@ -24,6 +24,25 @@ async function addFlashcard(deck: string, front: string, back: string) {
     throw new Error('Error: Unable to reach the server');
   }
 }
+
+// Checks if server reachable
+async function reqPerm() {
+  try {
+    // Add the note to the deck
+    const addNoteResponse = await fetch('http://localhost:8765', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'requestPermission',
+        version: 6,
+      }),
+    });
+
+    await addNoteResponse.json();
+  } catch (error) {
+    return false
+  }
+}
+
 /**
  * The component's render function. This will be called immediately after
  * the component is initially loaded, and then again every time the
@@ -38,10 +57,11 @@ async function onRender(event: Event): Promise<void> {
   let deck = data.args["deck"]
   let front = data.args["front"]
   let back = data.args["back"]
+  let tags = data.args["tags"]
 
   try {    
-    await addFlashcard(deck, front, back);
-    Streamlit.setComponentValue("Success")
+    const success = await addFlashcard(deck, front, back, tags);
+    Streamlit.setComponentValue(`Worked!, ${success}`)
   } catch (error) {
     Streamlit.setComponentValue("Error")
   }

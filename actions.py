@@ -2,18 +2,19 @@
 import json
 import os
 import openai
-import requests
 import re
 import streamlit as st
 import streamlit.components.v1 as components
+
+openai.api_key == st.secrets["OPENAI_API_KEY"]
 
 # Custom component to call AnkiConnect on client side
 parent_dir = os.path.dirname(os.path.abspath(__file__))
 build_dir = os.path.join(parent_dir, "API/frontend/build")
 _API = components.declare_component("my_component", path=build_dir)
 
-def API(deck, front, back):
-    component_value = _API(deck=deck, front=front, back=back)
+def API(deck, front, back, tags):
+    component_value = _API(deck=deck, front=front, back=back, tags=tags)
     return component_value
 
 class Actions:
@@ -22,13 +23,14 @@ class Actions:
 
     def send_to_gpt(self, page):
         prompt = """
-Use the following principles when responding:
+You are receiving the text from one slide of a lecture. Use the following principles when making the flashcards:
 
 - Before doing anything, summarise the text and ask yourself the question "What would I have to know from this slide to pass an exam on the topic".
 - Create Anki flashcards for an exam at university level.
 - Each card is standalone.
 - Short answers.
-- Only use the information that is given to you.
+- All information on slide needs to be used and only use the information that is on the slide.
+- Answers should be on the back and not included in the question.
 - Only add each piece of information once.
 - Questions and answers must be in """ + st.session_state["lang"] + """.
 - No questions about the uni, course, professor or auxiliary slide information.
@@ -37,12 +39,13 @@ Use the following principles when responding:
 Desired output:
 [
 {
-"front": "<content>",
-"back": "<content>"
-}, {
-"front": "<content>",
-"back": "<content>"
-} 
+"front": "<content1>",
+"back": "<content1>"
+},
+{
+"front": "<content2>",
+"back": "<content2>"
+}
 ]
 """
         
@@ -82,7 +85,7 @@ Desired output:
 
         raise Exception("Error: Maximum retries reached. GPT servers might be overloaded.")
 
-    def add_to_anki(self, cards):
+    def add_to_anki(self, cards, page):
         try:
             # TODO: implement new API check
             # api_available = False
@@ -92,18 +95,19 @@ Desired output:
             #         if response.ok:
             #             api_available = True
             #     except:
-            #         return False            
+            #         return False
             
-            st.toast("Adding flashcards to Anki")
-            for g, card in enumerate(cards):
+            # st.write("Cards are being sent", cards)
+            for card in cards:
                 front = card['front']
                 back = card['back']
-                API("MyDeck", front, back)
+                tags = st.session_state["flashcards_" + str(page) + "_tags"]
+                API("MyDeck", front, back, tags)
+                # st.write("Looking good: ", result)
             return True
 
         except Exception as e:
-            print("Error:", e)
-            return False
+            raise ValueError(e)
 
     def cleanup_response(self, text):
         try:
