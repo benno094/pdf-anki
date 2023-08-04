@@ -22,9 +22,7 @@ Version 0.46 alpha (Not perfect, but usable).
 
 ### To do:
 
-- Add option to log in to save preferences
-- Cache information in case connection to server lost
-- Include images
+- Make "requestPermission" call to API
 - Option to add card
 - Add option to choose title of deck and possibly call up available decks in Anki to choose location
 - Allow user to change prompt options
@@ -43,6 +41,7 @@ Version 0.46 alpha (Not perfect, but usable).
 - Max. uploaded file size reduced to 50MB
 
 0.4 alpha
+- Can now add without running locally
 - Can now add page range and change on-the-fly
 - Option to select returned language
 
