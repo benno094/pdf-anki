@@ -23,7 +23,6 @@ Version 0.45 alpha (Not perfect, but usable).
 
 ### To do:
 
-- Make "requestPermission" call to API
 - Option to add card
 - Allow user to select regions of slides
 - Add option to choose title of deck and possibly call up available decks in Anki to choose location
@@ -39,6 +38,7 @@ Version 0.45 alpha (Not perfect, but usable).
 - Max. uploaded file size reduced to 50MB
 
 0.4 alpha
+- Can now add without running locally
 - Can now add page range and change on-the-fly
 - Option to select returned language
 
