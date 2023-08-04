@@ -29,7 +29,7 @@ async function addFlashcard(deck: string, front: string, back: string, tags: str
 async function reqPerm() {
   try {
     // Add the note to the deck
-    const addNoteResponse = await fetch('http://localhost:8765', {
+    const reqPermResponse = await fetch('http://localhost:8765', {
       method: 'POST',
       body: JSON.stringify({
         action: 'requestPermission',
@@ -37,7 +37,8 @@ async function reqPerm() {
       }),
     });
 
-    await addNoteResponse.json();
+    const jsonResponse = await reqPermResponse.json();
+    return jsonResponse.result.permission;
   } catch (error) {
     return false
   }
@@ -54,16 +55,28 @@ async function onRender(event: Event): Promise<void> {
 
   // RenderData.args is the JSON dictionary of arguments sent from the
   // Python script.
+  let action = data.args["action"]
   let deck = data.args["deck"]
   let front = data.args["front"]
   let back = data.args["back"]
   let tags = data.args["tags"]
 
-  try {    
-    const success = await addFlashcard(deck, front, back, tags);
-    Streamlit.setComponentValue(`Worked!, ${success}`)
-  } catch (error) {
-    Streamlit.setComponentValue("Error")
+  if (action == "reqPerm") {
+    try {    
+      const permission = await reqPerm();
+      Streamlit.setComponentValue(permission)
+    } catch (error) {
+      throw new Error
+    }
+  } else if (action == "addCard") {    
+    try {    
+      const success = await addFlashcard(deck, front, back, tags);
+      Streamlit.setComponentValue(`Worked!, ${success}`)
+    } catch (error) {
+      throw new Error
+    }
+  } else {
+    throw new Error
   }
 
   // We tell Streamlit to update our frameHeight after each render event, in

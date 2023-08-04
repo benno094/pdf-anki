@@ -11,15 +11,21 @@ openai.api_key == st.secrets["OPENAI_API_KEY"]
 # Custom component to call AnkiConnect on client side
 parent_dir = os.path.dirname(os.path.abspath(__file__))
 build_dir = os.path.join(parent_dir, "API/frontend/build")
-_API = components.declare_component("my_component", path=build_dir)
+_API = components.declare_component("API", path=build_dir)
 
-def API(deck, front, back, tags):
-    component_value = _API(deck=deck, front=front, back=back, tags=tags)
+def API(action, key=None, deck=None, front=None, back=None, tags=None):
+    component_value = _API(action=action, key=key, deck=deck, front=front, back=back, tags=tags)
     return component_value
 
 class Actions:
     def __init__(self, root):
         self.root = root
+
+    def check_API(self, key=None):
+        # TODO: Change to try block
+        result = API(action="reqPerm", key=key)
+        if result == "granted":
+            st.session_state["api_reachable"] = True
 
     def send_to_gpt(self, page):
         prompt = """
@@ -34,7 +40,9 @@ You are receiving the text from one slide of a lecture. Use the following princi
 - Only add each piece of information once.
 - Questions and answers must be in """ + st.session_state["lang"] + """.
 - No questions about the uni, course, professor or auxiliary slide information.
+- For title slide just return "no information"
 - If whole slide fits on one flashcard, do that.
+- Returned characters need to be UTF-8.
 
 Desired output:
 [
@@ -86,28 +94,19 @@ Desired output:
         raise Exception("Error: Maximum retries reached. GPT servers might be overloaded.")
 
     def add_to_anki(self, cards, page):
-        try:
-            # TODO: implement new API check
-            # api_available = False
-            # while not api_available:
-            #     try:
-            #         response = requests.get("http://localhost:8765")
-            #         if response.ok:
-            #             api_available = True
-            #     except:
-            #         return False
-            
-            # st.write("Cards are being sent", cards)
-            for card in cards:
-                front = card['front']
-                back = card['back']
-                tags = st.session_state["flashcards_" + str(page) + "_tags"]
-                API("MyDeck", front, back, tags)
-                # st.write("Looking good: ", result)
-            return True
-
-        except Exception as e:
-            raise ValueError(e)
+        if st.session_state["api_reachable"]:
+            try:
+                # TODO: Process response from API
+                for card in cards:
+                    front = card['front']
+                    back = card['back']
+                    tags = st.session_state["flashcards_" + str(page) + "_tags"]
+                    API("addCard", deck = "MyDeck", front = front, back = back, tags = tags)
+                return True
+            except Exception as e:
+                raise ValueError(e)
+        else:
+            return False
 
     def cleanup_response(self, text):
         try:
