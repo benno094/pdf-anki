@@ -33,6 +33,8 @@ class AppView:
                     range_good = False
                 else:
                     range_good = True
+            else:
+                self.clear_data()
             if "api_reachable" not in st.session_state:
                 st.markdown("**To add flashcards to Anki:**\n- Anki needs to be running with AnkiConnect installed (Addon #: 2055492159)\n- A popup from Anki will appear $\\rightarrow$ choose yes.")
             else:
