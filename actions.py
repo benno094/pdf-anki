@@ -22,12 +22,12 @@ class Actions:
         self.root = root
 
     def check_API(self, key=None):
-        # TODO: Change to try block
         result = API(action="reqPerm", key=key)
         if result == "granted":
             st.session_state["api_reachable"] = True
 
     def send_to_gpt(self, page):
+        # TODO: Make function call like mentioned in openai docs
         prompt = """
 You are receiving the text from one slide of a lecture. Use the following principles when making the flashcards:
 

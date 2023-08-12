@@ -23,12 +23,13 @@ Version 0.46 alpha (Not perfect, but usable).
 ### To do:
 
 - Add option to log in to save preferences
-- Cache information in case connection to server lost
 - Include images
 - Option to add card
 - Add option to choose title of deck and possibly call up available decks in Anki to choose location
 - Allow user to change prompt options
 - Add formatting in response
+- Add option to add pure text
+- Option to allow more pages?
 
 ### Changelog:
 
