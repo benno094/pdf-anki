@@ -14,6 +14,7 @@ Version 0.45 alpha (Not perfect, but usable).
 *If compiling to run locally:*
 - An OpenAI key
     - Needs to be added as OPENAI_API_KEY="[Key here]" in .streamlit\secrets.toml
+ - "Add "http://localhost:8501" to "webCorsOriginList" under Tools -> Addons -> Config, then restart Anki."
 
 ## Usage:
 
