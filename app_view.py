@@ -30,7 +30,7 @@ class AppView:
                     range_good = False
                 else:
                     range_good = True
-            st.info("To add flashcards to Anki:\n- Anki needs to be running with AnkiConnect installed (Addon #: 2055492159)\n- In Anki: Tools -> Addons -> Config add 'https://pdf-anki-ddzhwhzfw5t.streamlit.app' to 'webCorsOriginList' and then restart Anki")
+            st.info("To add flashcards to Anki:\n- Anki needs to be running with AnkiConnect installed (Addon #: 2055492159)\n- In Anki: Tools -> Addons -> Config add 'https://pdf-anki.streamlit.app' to 'webCorsOriginList' and then restart Anki")
             st.divider()
             st.write("[Feedback](mailto:pdf.to.anki@gmail.com)")
 
