@@ -9,7 +9,7 @@ Version 0.45 alpha (Not perfect, but usable).
 ## Requirements:
 
 - Anki running with AnkiConnect installed (Addon #: 2055492159)
-    - Add "https://pdf-anki-ddzhwhzfw5t.streamlit.app" to "webCorsOriginList" under Tools -> Addons -> Config, then restart Anki.
+    - Add "https://pdf-anki.streamlit.app" to "webCorsOriginList" under Tools -> Addons -> Config, then restart Anki.
 
 *If compiling to run locally:*
 - An OpenAI key
