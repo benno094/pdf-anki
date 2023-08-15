@@ -34,7 +34,7 @@ Version 0.46 alpha (Not perfect, but usable).
 ### Changelog:
 
 0.46 alpha
-- Fixed 'page_count' memory leak
+- Fixed key error causing Streamlit crash
 - Stopped unnecessary regenerations of flashcards
 
 0.45 alpha
