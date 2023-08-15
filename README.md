@@ -4,7 +4,7 @@
 
 PDF to Anki program using GPT3.5-turbo from OpenAI. Streamlit is the web-GUI. Shout-out to OpenAI and Streamlit for saving me a ton of work!.
 
-Version 0.45 alpha (Not perfect, but usable).
+Version 0.46 alpha (Not perfect, but usable).
 
 ## Requirements:
 
@@ -24,6 +24,7 @@ Version 0.45 alpha (Not perfect, but usable).
 
 ### To do:
 
+- Shift to Vercel
 - Option to add card
 - Allow user to select regions of slides
 - Add option to choose title of deck and possibly call up available decks in Anki to choose location
@@ -31,6 +32,10 @@ Version 0.45 alpha (Not perfect, but usable).
 - Add formatting in response
 
 ### Changelog:
+
+0.46 alpha
+- Fixed 'page_count' memory leak
+- Stopped unnecessary regenerations of flashcards
 
 0.45 alpha
 - Improved memory usage
