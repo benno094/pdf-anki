@@ -37,7 +37,6 @@ Version 0.46 alpha (Not perfect, but usable).
 
 - Automatically check for AnkiConnect connection
 - Show decks
-- Added compatibility for Vercel
 
 0.45 alpha
 - Improved memory usage
