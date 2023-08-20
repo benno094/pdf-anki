@@ -8,9 +8,8 @@ class AppView:
     def __init__(self, actions):
         self.actions = actions
 
-    def display(self):
-        if "api_reachable" not in st.session_state:
-            self.actions.check_API()
+    def display(self):        
+        self.actions.check_API()
         range_good = False
         with st.sidebar:
             st.warning("This is the test site. Use the stable version over at [PDF-Anki](https://pdf-anki.streamlit.app/)", icon="⚠️")
@@ -35,10 +34,14 @@ class AppView:
                     range_good = True
             else:
                 self.clear_data()
-            if "api_reachable" not in st.session_state:
-                st.markdown("**To add flashcards to Anki:**\n- Anki needs to be running with AnkiConnect installed (Addon #: 2055492159)\n- A popup from Anki will appear $\\rightarrow$ choose yes.")
+            if "decks" in st.session_state:
+                st.selectbox(
+                'Choose a deck',
+                st.session_state['decks']
+                )
             else:
-                st.info('Cards will be added to deck "MyDeck"')
+                self.actions.get_decks()
+                st.markdown("**To add flashcards to Anki:**\n- Anki needs to be running with AnkiConnect installed (Addon #: 2055492159)\n- A popup from Anki will appear $\\rightarrow$ choose yes.")
             st.divider()
             st.write("Disclaimer: Use at your own risk.")
             st.write("[Feedback](mailto:pdf.to.anki@gmail.com)")
@@ -148,6 +151,8 @@ class AppView:
 
     def clear_data(self):
         for key in st.session_state.keys():
+            if key == "decks" or key == "api_checked":
+                continue
             del st.session_state[key]
 
     def disable_flashcard(self, page, num):

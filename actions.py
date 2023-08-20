@@ -22,9 +22,16 @@ class Actions:
         self.root = root
 
     def check_API(self, key=None):
-        result = API(action="reqPerm", key=key)
-        if result == "granted":
-            st.session_state["api_reachable"] = True
+        if "api_checked" not in st.session_state:
+            result = API(action="reqPerm", key=key)
+            if result == "granted":
+                st.session_state["api_checked"] = True
+
+    def get_decks(self, key=None):
+        decks = API(action="getDecks", key=key)
+        if decks is not False and decks is not None:
+            st.session_state['decks'] = decks
+            
 
     def send_to_gpt(self, page):
         # TODO: Make function call like mentioned in openai docs
@@ -42,7 +49,6 @@ You are receiving the text from one slide of a lecture. Use the following princi
 - No questions about the uni, course, professor or auxiliary slide information.
 - For title slide just return "no information"
 - If whole slide fits on one flashcard, do that.
-- Returned characters need to be UTF-8.
 
 Desired output:
 [

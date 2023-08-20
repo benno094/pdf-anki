@@ -44,6 +44,25 @@ async function reqPerm() {
   }
 }
 
+// Returns users decks
+async function getDecks() {
+  try {
+    // Add the note to the deck
+    const getDecksResponse = await fetch('http://localhost:8765', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'deckNames',
+        version: 6,
+      }),
+    });
+
+    const jsonResponse = await getDecksResponse.json();
+    return jsonResponse.result;
+  } catch (error) {
+    return false
+  }
+}
+
 /**
  * The component's render function. This will be called immediately after
  * the component is initially loaded, and then again every time the
@@ -72,6 +91,13 @@ async function onRender(event: Event): Promise<void> {
     try {    
       const success = await addFlashcard(deck, front, back, tags);
       Streamlit.setComponentValue(`Worked!, ${success}`)
+    } catch (error) {
+      throw new Error
+    }
+  } else if (action == "getDecks") {
+    try {    
+      const decks = await getDecks();
+      Streamlit.setComponentValue(decks)
     } catch (error) {
       throw new Error
     }
