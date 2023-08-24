@@ -6,14 +6,7 @@ import re
 import streamlit as st
 import streamlit.components.v1 as components
 
-try:
-    # Try to get the API key from Streamlit secrets
-    openai_api_key = st.secrets["OPENAI_API_KEY"]
-except KeyError:
-    # If the key doesn't exist there, get it from an environment variable
-    openai_api_key = os.getenv("OPENAI_API_KEY")
-
-openai.api_key = openai_api_key
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # Custom component to call AnkiConnect on client side
 parent_dir = os.path.dirname(os.path.abspath(__file__))
