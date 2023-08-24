@@ -6,9 +6,11 @@ import re
 import streamlit as st
 import streamlit.components.v1 as components
 
-openai_api_key = st.secrets["OPENAI_API_KEY"]
-
-if not openai_api_key:
+try:
+    # Try to get the API key from Streamlit secrets
+    openai_api_key = st.secrets["OPENAI_API_KEY"]
+except KeyError:
+    # If the key doesn't exist there, get it from an environment variable
     openai_api_key = os.getenv("OPENAI_API_KEY")
 
 openai.api_key = openai_api_key
