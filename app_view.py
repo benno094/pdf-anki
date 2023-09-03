@@ -9,7 +9,6 @@ class AppView:
         self.actions = actions
 
     def display(self):
-        # st.session_state.sidebar_state = 'expanded'
         range_good = False
         with st.sidebar:
             st.session_state["lang"] = st.selectbox("Returned language", ('English', 'German'), on_change=self.clear_data)
@@ -19,11 +18,12 @@ class AppView:
             with col2:
                 num = st.number_input('Number of pages', value=10, min_value=1, max_value=15, format='%d')
 
-            file = st.file_uploader("Choose a file", type=["pdf"], on_change=self.clear_data)
+            file = st.file_uploader("Choose a file", type=["pdf"])
             if file:                
                 st.session_state["file_name"] = file.name
                 doc = fitz.open("pdf", file.read())
-                st.session_state['page_count'] = len(doc)
+                if "page_count" not in st.session_state:
+                    st.session_state['page_count'] = len(doc)
 
                 if start > st.session_state['page_count']:
                     st.warning("Start page out of range")
@@ -62,10 +62,10 @@ class AppView:
                     coll = True
                 # TODO: Fix added label
                 if f"status_label_{i}" in st.session_state:
-                    label = st.session_state[f"status_label_{i}"]
+                    label = f" - {st.session_state[f'status_label_{i}']}"
                 else:
                     label = ""
-                with st.expander(f"Page {i + 1}/{st.session_state['page_count']}", expanded=coll):
+                with st.expander(f"Page {i + 1}/{st.session_state.get('page_count', '')}{label}", expanded=coll):
                     col1, col2 = st.columns([0.6, 0.4])
                     # Display the image in the first column
                     with col1:

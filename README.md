@@ -4,7 +4,7 @@
 
 PDF to Anki program using GPT3.5-turbo from OpenAI. Streamlit is the web-GUI. Shout-out to OpenAI and Streamlit for saving me a ton of work!.
 
-Version 0.45 alpha (Not perfect, but usable).
+Version 0.46 alpha (Not perfect, but usable).
 
 ## Requirements:
 
@@ -31,6 +31,10 @@ Version 0.45 alpha (Not perfect, but usable).
 - Add formatting in response
 
 ### Changelog:
+
+0.46 alpha
+- Fixed key error causing Streamlit crash
+- Stopped unnecessary regenerations of flashcards
 
 0.45 alpha
 - Improved memory usage
