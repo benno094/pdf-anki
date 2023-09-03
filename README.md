@@ -24,7 +24,6 @@ Version 0.46 alpha (Not perfect, but usable).
 
 ### To do:
 
-- Shift to Vercel
 - Option to add card
 - Allow user to select regions of slides
 - Add option to choose title of deck and possibly call up available decks in Anki to choose location
