@@ -21,11 +21,14 @@ class Actions:
     def __init__(self, root):
         self.root = root
 
+    # TODO: Extract pictures from PDF to add to flashcards.
+    # TODO: Detect if page is mainly diagram and don't extract text.
     def send_to_gpt(self, page):
         prompt = """
 You are receiving the text from one slide of a lecture. Use the following principles when making the flashcards:
 
-- Before doing anything, summarise the text and ask yourself the question "What would I have to know from this slide to pass an exam on the topic".
+- If slide is just a table of contents, learning objectives, introductory or a title slide call null_function.
+- If slide appears to only include a table call null_function.
 - Create Anki flashcards for an exam at university level.
 - Each card is standalone.
 - Short answers.
@@ -35,18 +38,6 @@ You are receiving the text from one slide of a lecture. Use the following princi
 - Questions and answers must be in """ + st.session_state["lang"] + """.
 - No questions about the uni, course, professor or auxiliary slide information.
 - If whole slide fits on one flashcard, do that.
-
-Desired output:
-[
-{
-"front": "<content1>",
-"back": "<content1>"
-},
-{
-"front": "<content2>",
-"back": "<content2>"
-}
-]
 """
         
         new_chunk = st.session_state['text_' + str(page)]
@@ -70,40 +61,68 @@ Desired output:
                             "content": new_chunk
                         }
                     ],
+                    functions=[
+                        {
+                            "name": "flashcard_function",
+                            "parameters": {
+                                "type": "object",
+                                "properties": {
+                                    "flashcards": {
+                                        "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                "front": {"type": "string", "description": "Front side of the flashcard; a question"},
+                                                "back": {"type": "string", "description": "Back side of the flashcard; the answer"}
+                                                }
+                                            }
+                                    }
+                                }
+                            }  
+                        },
+                        {
+                            "name": "null_function",
+                            "parameters": {
+                                "type": "object",
+                                "properties": {}
+                            }
+                        }
+                    ],
                     # TODO: play with temperature
                     temperature=0.9,
+                    request_timeout=25,
                 )
+                
+                print(f"Call no. {str(retries + 1)} for slide {str(page + 1)}")
+                print(completion.choices[0].message.function_call.name)
 
-                response = completion.choices[0].message['content']
-                if response:
-                    return response
-                else:
-                    raise Exception("Error: No completion response returned.")
+                if completion.choices[0].message.function_call.name == "null_function":
+                    st.session_state[f"{str(page)}_is_title"] = True
+                    return None
+
+                try:
+                    response = completion.choices[0].message.function_call.arguments
+                    if response:
+                        return response
+                except AttributeError:
+                    print("Error: No function_call in the response. Retrying...")
+                    retries += 1
+                    continue
+                
+                raise Exception("Error: No completion response returned.")
             except openai.OpenAIError as e:
                 print(f"Error: {e}. Retrying...")
                 retries += 1
 
-        raise Exception("Error: Maximum retries reached. GPT servers might be overloaded.")
-
     def add_to_anki(self, cards, page):
         try:
             # TODO: implement new API check
-            # api_available = False
-            # while not api_available:
-            #     try:
-            #         response = requests.get("http://localhost:8765")
-            #         if response.ok:
-            #             api_available = True
-            #     except:
-            #         return False
             
-            # st.write("Cards are being sent", cards)
             for card in cards:
                 front = card['front']
                 back = card['back']
                 tags = st.session_state["flashcards_" + str(page) + "_tags"]
                 API("MyDeck", front, back, tags)
-                # st.write("Looking good: ", result)
             return True
 
         except Exception as e:
@@ -125,12 +144,16 @@ Desired output:
 
             # Parse the JSON data
             response_cards = json.loads(response_text_single_quotes, strict=False)
-            # print("Parsed:", response_cards)
+            # print("Parsed:", response_cards)            
 
-            return response_cards
+            # Extract the "flashcards" array
+            response_data = response_cards["flashcards"]
+
+            return response_data
 
         except Exception as e:
             print(f"Error with OpenAI's GPT-3.5 Turbo: {str(e)}")
+            print(text)
 
     def escape_inner_brackets(self, match_obj):
         inner_text = match_obj.group(0)
