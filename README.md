@@ -4,7 +4,7 @@
 
 PDF to Anki program using GPT3.5-turbo from OpenAI. Streamlit is the web-GUI. Shout-out to OpenAI and Streamlit for saving me a ton of work!.
 
-Version 0.46 alpha (Not perfect, but usable).
+Version 0.5 alpha (Not perfect, but usable).
 
 ## Requirements:
 
@@ -20,19 +20,24 @@ Version 0.46 alpha (Not perfect, but usable).
 
 1. Select a page range and a language for the flashcards.
 2. Choose a PDF file. Cards will automatically be created for each page.
-3. Flash cards are be displayed and can then be modified before being added to Anki.
+3. Flash cards are displayed and can then be modified before being added to Anki.
 
 ### To do:
 
 - Option to add card
-- Allow user to select regions of slides
 - Add option to choose title of deck and possibly call up available decks in Anki to choose location
 - Allow user to change prompt options
 - Add formatting in response
 
 ### Changelog:
 
+0.5 alpha
+
+- Lowered chance that GPT returns non-parseable result by moving to functions
+- Skip pages without relevant info
+
 0.46 alpha
+- Added JPEG compression to reduce image size
 - Fixed key error causing Streamlit crash
 - Stopped unnecessary regenerations of flashcards
 

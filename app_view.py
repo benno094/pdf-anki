@@ -1,4 +1,5 @@
 # AppView.py
+import io
 import json
 import streamlit as st
 import fitz
@@ -42,7 +43,13 @@ class AppView:
                 # Load the PDF and its previews and extract text for each page
                 for i, page in enumerate(doc):
                     pix = page.get_pixmap(dpi=100)
-                    st.session_state['image_' + str(i)] = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+                    img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+
+                    buf = io.BytesIO()
+                    img.save(buf, format='JPEG', quality=80)  # Adjust the quality as needed
+                    byte_im = buf.getvalue()
+
+                    st.session_state['image_' + str(i)] = byte_im
                     st.session_state['text_' + str(i)] = page.get_text()
                 doc.close()
 
@@ -51,8 +58,9 @@ class AppView:
                 if i == st.session_state['page_count']:
                     break
                 # st.toast("Generating flashcards for page " + str(i + 1) + "/" + str(st.session_state['page_count']))                
-                if "flashcards_" + str(i) not in st.session_state:
-                    self.generate_flashcards(i)
+                if f"{i}_is_title" not in st.session_state:
+                    if "flashcards_" + str(i) not in st.session_state:
+                        self.generate_flashcards(i)
 
                 # Create an expander for each image and its corresponding flashcards
                 # If cards have been added collapse
@@ -60,11 +68,12 @@ class AppView:
                     coll = False
                 else:
                     coll = True
-                # TODO: Fix added label
+
                 if f"status_label_{i}" in st.session_state:
                     label = f" - {st.session_state[f'status_label_{i}']}"
                 else:
                     label = ""
+
                 with st.expander(f"Page {i + 1}/{st.session_state.get('page_count', '')}{label}", expanded=coll):
                     col1, col2 = st.columns([0.6, 0.4])
                     # Display the image in the first column
@@ -72,18 +81,26 @@ class AppView:
                         st.image(st.session_state['image_' + str(i)])
 
                     # If flashcards exist for the page, show them and show 'Add to Anki' button
-                    # Otherwise, show 'generate flashcards' button
+                    # Otherwise, show 'generate flashcards' button              
+                    if f"{i}_is_title" in st.session_state:
+                        st.session_state['flashcards_' + str(i)] = "dummy cards"
                     with col2:
                         if 'flashcards_' + str(i) in st.session_state:
+
                             p = i
                             flashcards = json.loads(json.dumps(st.session_state['flashcards_' + str(i)]))
+
+                            if f"{i}_is_title" in st.session_state:
+                                flashcards = None
+                                st.info("No flashcards generated for this slide as it doesn't contain relevant information.")
 
                             # Check if GPT returned something usable, else remove entry and throw error
                             if flashcards:
                                 length = len(flashcards)
                             else:
                                 del st.session_state['flashcards_' + str(i)]
-                                st.button("Regenerate flashcards", key=f"reg_{i}", on_click = self.generate_flashcards(i))
+                                if st.button("Regenerate flashcards", key=f"reg_{i}"):
+                                    self.generate_flashcards(i, regen = True)
                                 continue
                             # Create a tab for each flashcard
                             tabs = st.tabs([f"#{i+1}" for i in range(length)])
@@ -177,10 +194,14 @@ class AppView:
                 st.warning(e, icon="⚠️")
 
     # @st.cache_data
-    def generate_flashcards(self, page):
-        # TODO: Add instructions for the session, as added by openai
+    def generate_flashcards(self, page, regen = None):
+        if regen:
+            if f"{page}_is_title" in st.session_state:
+                del st.session_state[f"{page}_is_title"]
+        # TODO: Receive in chunks so user knows something is happening
         flashcards = self.actions.send_to_gpt(page)
 
-        flashcards_clean = self.actions.cleanup_response(flashcards)
+        if flashcards:
+            flashcards_clean = self.actions.cleanup_response(flashcards)
 
-        st.session_state['flashcards_' + str(page)] = flashcards_clean
+            st.session_state['flashcards_' + str(page)] = flashcards_clean
