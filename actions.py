@@ -23,22 +23,17 @@ class Actions:
 
     # TODO: Extract pictures from PDF to add to flashcards.
     # TODO: Detect if page is mainly diagram and don't extract text.
-    def check_API(self, key=None):        
-        if 'API_count' not in st.session_state:
-            st.session_state.API_count = 0
+    def check_API(self, key=None):
+        # TODO: Fix api_reachable logic
         if "api_reachable" not in st.session_state:
-            st.session_state.API_count += 1
-            result = API(action="reqPerm", key=st.session_state['API_count'])
+            result = API(action="reqPerm", key=key)
             if result == "granted":
                 st.session_state["api_reachable"] = True
 
-    def get_decks(self, key=None):                
-        if 'API_count' not in st.session_state:
-            st.session_state.API_count = 0
-        st.session_state.API_count += 1
-        decks = API(action="getDecks", key=st.session_state['API_count'])
+    def get_decks(self, key=None):
+        decks = API(action="getDecks", key=key)
         if decks is not False and decks is not None:
-            st.session_state['decks'] = decks           
+            st.session_state['decks'] = decks
 
     def send_to_gpt(self, page):
         # TODO: Make function call like mentioned in openai docs
@@ -114,7 +109,7 @@ You are receiving the text from one slide of a lecture. Use the following princi
                 
                 # TODO: Make sure calls are not repeated
                 print(f"Call no. {str(retries + 1)} for slide {str(page + 1)}")
-                print(completion.choices[0].message.function_call.name)
+                print("Name: ", completion.choices[0].message.function_call.name)
 
                 if completion.choices[0].message.function_call.name == "null_function":
                     st.session_state[f"{str(page)}_is_title"] = True
@@ -128,7 +123,7 @@ You are receiving the text from one slide of a lecture. Use the following princi
                     print("Error: No function_call in the response. Retrying...")
                     retries += 1
                     continue
-                
+
                 raise Exception("Error: No completion response returned.")
             except openai.OpenAIError as e:
                 print(f"Error: {e}. Retrying...")
@@ -137,8 +132,7 @@ You are receiving the text from one slide of a lecture. Use the following princi
     def add_to_anki(self, cards, page):
         deck = st.session_state['deck']
         try:
-            del st.session_state["api_reachable"]
-            self.check_API()
+            self.check_API("API_check")
             if st.session_state["api_reachable"]:
                 try:
                     # TODO: Process response from API

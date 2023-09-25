@@ -32,15 +32,16 @@ class AppView:
                     range_good = False
                 else:
                     range_good = True
-            else:
-                self.clear_data()
+            # else: TODO: Clear file data
+            #     self.clear_data()
             if "decks" in st.session_state:
-                # TODO: Add refresh deck button and check to make sure deck actually exists
+                # TODO: Add refresh deck button and check to make sure deck actually exists when adding to it
                 st.selectbox(
                 'Choose a deck',
                 st.session_state['decks'],
                 key="deck"
-                )
+                )                
+                st.session_state["api_reachable"] = True
             else:
                 self.actions.get_decks()
                 st.markdown("**To add flashcards to Anki:**\n- Anki needs to be running with AnkiConnect installed (Addon #: 2055492159)\n- A popup from Anki will appear $\\rightarrow$ choose yes.")
@@ -103,18 +104,18 @@ class AppView:
 
                             p = i
                             flashcards = json.loads(json.dumps(st.session_state['flashcards_' + str(i)]))
-                            print(flashcards)
 
                             if f"{i}_is_title" in st.session_state:
                                 flashcards = None
                                 st.info("No flashcards generated for this slide as it doesn't contain relevant information.")
+                                continue
 
                             # Check if GPT returned something usable, else remove entry and throw error
                             if flashcards:
                                 length = len(flashcards)
                             else:
                                 print("No flashcards, regenerating")
-                                del st.session_state['flashcards_' + str(i)]
+                                # del st.session_state['flashcards_' + str(i)]
                                 if st.button("Regenerate flashcards", key=f"reg_{i}"):
                                     self.generate_flashcards(i, regen = True)
                                 continue
@@ -163,7 +164,7 @@ class AppView:
                             else:
                                 no_cards = False                                
                             if "flashcards_" + str(p) + "_added" not in st.session_state:
-                                self.actions.check_API()
+                                self.actions.check_API("API_check_added")
                                 if "api_reachable" in st.session_state:
                                     if st.session_state["api_reachable"] == True:
                                         st.button(f"Add {st.session_state['flashcards_' + str(p) + '_to_add']} flashcard(s) to Anki", key=f"add_{str(p)}", on_click=self.prepare_and_add_flashcards_to_anki, args=[p], disabled=no_cards)
