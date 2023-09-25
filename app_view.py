@@ -10,6 +10,7 @@ class AppView:
         self.actions = actions
 
     def display(self):
+        self.actions.check_API("orig_check")
         range_good = False
         with st.sidebar:
             st.warning("This is the test site. Use the stable version over at [PDF-Anki](https://pdf-anki.streamlit.app/)", icon="⚠️")
