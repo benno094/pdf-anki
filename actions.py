@@ -23,17 +23,22 @@ class Actions:
 
     # TODO: Extract pictures from PDF to add to flashcards.
     # TODO: Detect if page is mainly diagram and don't extract text.
-    def check_API(self, key=None):
-        if "api_checked" not in st.session_state:
-            result = API(action="reqPerm", key=key)
+    def check_API(self, key=None):        
+        if 'API_count' not in st.session_state:
+            st.session_state.API_count = 0
+        if "api_reachable" not in st.session_state:
+            st.session_state.API_count += 1
+            result = API(action="reqPerm", key=st.session_state['API_count'])
             if result == "granted":
-                st.session_state["api_checked"] = True
+                st.session_state["api_reachable"] = True
 
-    def get_decks(self, key=None):
-        decks = API(action="getDecks", key=key)
+    def get_decks(self, key=None):                
+        if 'API_count' not in st.session_state:
+            st.session_state.API_count = 0
+        st.session_state.API_count += 1
+        decks = API(action="getDecks", key=st.session_state['API_count'])
         if decks is not False and decks is not None:
-            st.session_state['decks'] = decks
-            
+            st.session_state['decks'] = decks           
 
     def send_to_gpt(self, page):
         # TODO: Make function call like mentioned in openai docs
@@ -104,9 +109,10 @@ You are receiving the text from one slide of a lecture. Use the following princi
                     ],
                     # TODO: play with temperature
                     temperature=0.9,
-                    request_timeout=25,
+                    request_timeout=35,
                 )
                 
+                # TODO: Make sure calls are not repeated
                 print(f"Call no. {str(retries + 1)} for slide {str(page + 1)}")
                 print(completion.choices[0].message.function_call.name)
 
@@ -129,19 +135,25 @@ You are receiving the text from one slide of a lecture. Use the following princi
                 retries += 1
 
     def add_to_anki(self, cards, page):
-        if st.session_state["api_reachable"]:
-            try:
-                # TODO: Process response from API
-                for card in cards:
-                    front = card['front']
-                    back = card['back']
-                    tags = st.session_state["flashcards_" + str(page) + "_tags"]
-                    API("addCard", deck = "MyDeck", front = front, back = back, tags = tags)
-                return True
-            except Exception as e:
-                raise ValueError(e)
-        else:
-            return False
+        deck = st.session_state['deck']
+        try:
+            del st.session_state["api_reachable"]
+            self.check_API()
+            if st.session_state["api_reachable"]:
+                try:
+                    # TODO: Process response from API
+                    for card in cards:
+                        front = card['front']
+                        back = card['back']
+                        tags = st.session_state["flashcards_" + str(page) + "_tags"]
+                        API("addCard", deck = deck, front = front, back = back, tags = tags)
+                    return True
+                except Exception as e:
+                    raise ValueError(e)
+            else:
+                return False
+        except Exception as e:
+            raise ValueError(e)
 
     def cleanup_response(self, text):
         try:

@@ -35,9 +35,11 @@ class AppView:
             else:
                 self.clear_data()
             if "decks" in st.session_state:
+                # TODO: Add refresh deck button and check to make sure deck actually exists
                 st.selectbox(
                 'Choose a deck',
-                st.session_state['decks']
+                st.session_state['decks'],
+                key="deck"
                 )
             else:
                 self.actions.get_decks()
@@ -101,6 +103,7 @@ class AppView:
 
                             p = i
                             flashcards = json.loads(json.dumps(st.session_state['flashcards_' + str(i)]))
+                            print(flashcards)
 
                             if f"{i}_is_title" in st.session_state:
                                 flashcards = None
@@ -110,6 +113,7 @@ class AppView:
                             if flashcards:
                                 length = len(flashcards)
                             else:
+                                print("No flashcards, regenerating")
                                 del st.session_state['flashcards_' + str(i)]
                                 if st.button("Regenerate flashcards", key=f"reg_{i}"):
                                     self.generate_flashcards(i, regen = True)
@@ -159,15 +163,17 @@ class AppView:
                             else:
                                 no_cards = False                                
                             if "flashcards_" + str(p) + "_added" not in st.session_state:
-                                if st.session_state["api_reachable"] == True:
-                                    st.button(f"Add {st.session_state['flashcards_' + str(p) + '_to_add']} flashcard(s) to Anki", key=f"add_{str(p)}", on_click=self.prepare_and_add_flashcards_to_anki, args=[p], disabled=no_cards)
+                                self.actions.check_API()
+                                if "api_reachable" in st.session_state:
+                                    if st.session_state["api_reachable"] == True:
+                                        st.button(f"Add {st.session_state['flashcards_' + str(p) + '_to_add']} flashcard(s) to Anki", key=f"add_{str(p)}", on_click=self.prepare_and_add_flashcards_to_anki, args=[p], disabled=no_cards)
         else:
             if 'image_0' in st.session_state:
                 self.clear_data()
 
     def clear_data(self):
         for key in st.session_state.keys():
-            if key == "decks" or key == "api_checked":
+            if key == "decks" or key == "api_reachable":
                 continue
             del st.session_state[key]
 
