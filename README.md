@@ -2,14 +2,13 @@
 
 ## Introduction
 
-PDF to Anki program using GPT3.5-turbo from OpenAI. Streamlit is the web-GUI. Shout-out to OpenAI and Streamlit for saving me a ton of work!.
+PDF to Anki program using GPT3.5-turbo from OpenAI. Streamlit is the web-GUI. Shout-out to OpenAI and Streamlit for saving me a ton of work!
 
 Version 0.5 alpha (Not perfect, but usable).
 
 ## Requirements:
 
 - Anki running with AnkiConnect installed (Addon #: 2055492159)
-    - Add "https://pdf-anki.streamlit.app" to "webCorsOriginList" under Tools -> Addons -> Config, then restart Anki.
 
 *If compiling to run locally:*
 - An OpenAI key
@@ -24,10 +23,14 @@ Version 0.5 alpha (Not perfect, but usable).
 
 ### To do:
 
+- Add option to log in to save preferences
+- Include images
 - Option to add card
 - Add option to choose title of deck and possibly call up available decks in Anki to choose location
 - Allow user to change prompt options
 - Add formatting in response
+- Add option to add pure text
+- Option to allow more pages?
 
 ### Changelog:
 
@@ -40,6 +43,8 @@ Version 0.5 alpha (Not perfect, but usable).
 - Added JPEG compression to reduce image size
 - Fixed key error causing Streamlit crash
 - Stopped unnecessary regenerations of flashcards
+- Automatically check for AnkiConnect connection
+- Show decks
 
 0.45 alpha
 - Improved memory usage

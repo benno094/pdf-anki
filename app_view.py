@@ -12,10 +12,11 @@ class AppView:
     def display(self):
         range_good = False
         with st.sidebar:
-            st.session_state["lang"] = st.selectbox("Returned language", ('English', 'German'), on_change=self.clear_data)
+            st.warning("This is the test site. Use the stable version over at [PDF-Anki](https://pdf-anki.streamlit.app/)", icon="⚠️")
+            st.session_state["lang"] = st.selectbox("Returned language", ('English', 'German'))
             col1, col2 = st.columns(2)
             with col1:            
-                start = st.number_input('Starting page', value=1, min_value=1, format='%i')
+                start = st.number_input('Starting page', value=1, min_value=1, format='%i', key="start_page")
             with col2:
                 num = st.number_input('Number of pages', value=10, min_value=1, max_value=15, format='%d')
 
@@ -31,8 +32,18 @@ class AppView:
                     range_good = False
                 else:
                     range_good = True
-            st.info("To add flashcards to Anki:\n- Anki needs to be running with AnkiConnect installed (Addon #: 2055492159)\n- In Anki: Tools -> Addons -> Config add 'https://pdf-anki.streamlit.app' to 'webCorsOriginList' and then restart Anki")
+            else:
+                self.clear_data()
+            if "decks" in st.session_state:
+                st.selectbox(
+                'Choose a deck',
+                st.session_state['decks']
+                )
+            else:
+                self.actions.get_decks()
+                st.markdown("**To add flashcards to Anki:**\n- Anki needs to be running with AnkiConnect installed (Addon #: 2055492159)\n- A popup from Anki will appear $\\rightarrow$ choose yes.")
             st.divider()
+            st.write("Disclaimer: Use at your own risk.")
             st.write("[Feedback](mailto:pdf.to.anki@gmail.com)")
 
         # TODO: Cache all created flashcards
@@ -54,8 +65,9 @@ class AppView:
                 doc.close()
 
             # Loop through the pages
+            page_count = st.session_state['page_count']
             for i in range(start - 1, start + num - 1):
-                if i == st.session_state['page_count']:
+                if i == page_count:
                     break
                 # st.toast("Generating flashcards for page " + str(i + 1) + "/" + str(st.session_state['page_count']))                
                 if f"{i}_is_title" not in st.session_state:
@@ -108,8 +120,10 @@ class AppView:
                                 st.session_state["flashcards_" + str(i) + "_count"] = length
                                 st.session_state["flashcards_" + str(i) + "_to_add"] = length
 
+                            # TODO: Deal with cards that are returned with "no information"
                             for i, flashcard in enumerate(flashcards):
                                 with tabs[i]:
+                                    # TODO: Make function for creation of flashcards
                                     # Default state: display flashcard
                                     if f"fc_active_{p, i}" not in st.session_state:
                                         if st.session_state["flashcards_" + str(p) + "_count"] > 5:
@@ -135,26 +149,26 @@ class AppView:
                                         st.text_area(f"Back", value=flashcard["back"], key=f"back_{p, i}", disabled=False)
 
                                         st.button("Disable flashcard", key=f"del_{p, i}", on_click=self.disable_flashcard, args=[p, i])
-
-                            col1, col2 = st.columns([0.4,1])
-                            with col1:
-                                # Blank out 'add to Anki' button if no cards
-                                if st.session_state["flashcards_" + str(p) + "_to_add"] == 0:
-                                    no_cards = True
-                                else:
-                                    no_cards = False                                
-                                if "flashcards_" + str(p) + "_added" not in st.session_state:
+                            # Create tag for flashcard
+                            if "flashcards_" + str(p) + "_tags" not in st.session_state:
+                                st.session_state["flashcards_" + str(p) + "_tags"] = st.session_state["file_name"].replace(' ', '_').replace('.pdf', '') + "_page_" + str(p + 1)
+                            st.text_input("Tag:", value = st.session_state["flashcards_" + str(p) + "_tags"], key = f"tag_{str(p)}")
+                            # Blank out 'add to Anki' button if no cards
+                            if st.session_state["flashcards_" + str(p) + "_to_add"] == 0:
+                                no_cards = True
+                            else:
+                                no_cards = False                                
+                            if "flashcards_" + str(p) + "_added" not in st.session_state:
+                                if st.session_state["api_reachable"] == True:
                                     st.button(f"Add {st.session_state['flashcards_' + str(p) + '_to_add']} flashcard(s) to Anki", key=f"add_{str(p)}", on_click=self.prepare_and_add_flashcards_to_anki, args=[p], disabled=no_cards)
-                            with col2:
-                                if "flashcards_" + str(p) + "_tags" not in st.session_state:
-                                    st.session_state["flashcards_" + str(p) + "_tags"] = st.session_state["file_name"].replace(' ', '_').replace('.pdf', '') + "_page_" + str(p + 1)
-                                st.text_input("Tag:", value = st.session_state["flashcards_" + str(p) + "_tags"], key = f"tag_{str(p)}")
         else:
             if 'image_0' in st.session_state:
                 self.clear_data()
 
     def clear_data(self):
         for key in st.session_state.keys():
+            if key == "decks" or key == "api_checked":
+                continue
             del st.session_state[key]
 
     def disable_flashcard(self, page, num):
