@@ -11,8 +11,9 @@ class AppView:
 
     def display(self):
         range_good = False
-        with st.sidebar:
-            st.session_state["lang"] = st.selectbox("Returned language", ('English', 'German'), on_change=self.clear_data)
+        with st.sidebar:            
+            languages = ['English', 'Bengali', 'French', 'German', 'Hindi', 'Urdu', 'Mandarin Chinese', 'Portuguese', 'Spanish', 'Arabic']
+            st.session_state["lang"] = st.selectbox("Returned language", languages, on_change=self.clear_data)
             col1, col2 = st.columns(2)
             with col1:            
                 start = st.number_input('Starting page', value=1, min_value=1, format='%i')
