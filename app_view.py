@@ -12,7 +12,7 @@ class AppView:
     def display(self):
         range_good = False
         with st.sidebar:            
-            languages = ['English', 'Bengali', 'French', 'German', 'Hindi', 'Urdu', 'Mandarin Chinese', 'Portuguese', 'Spanish', 'Arabic']
+            languages = ['English', 'Bengali', 'French', 'German', 'Hindi', 'Urdu', 'Mandarin Chinese', 'Polish', 'Portuguese', 'Spanish', 'Arabic']
             st.session_state["lang"] = st.selectbox("Returned language", languages, on_change=self.clear_data)
             col1, col2 = st.columns(2)
             with col1:            
@@ -33,11 +33,12 @@ class AppView:
                 else:
                     range_good = True
             st.info("To add flashcards to Anki:\n- Anki needs to be running with AnkiConnect installed (Addon #: 2055492159)\n- In Anki: Tools -> Addons -> Config add 'https://pdf-anki.streamlit.app' to 'webCorsOriginList' and then restart Anki")
-            st.divider()
+            st.divider()            
+            st.write("Disclaimer: Use at your own risk.")
             st.write("[Feedback](mailto:pdf.to.anki@gmail.com)")
 
         # TODO: Cache all created flashcards
-    
+        st.info("It's come to the point where word has got around and the number of users is increasing. The extra users are causing openai API costs to increase. We don't want to have to implement any subscription system, so here is a way to support the site and keep it free: [Buy Me A Coffee](https://www.buymeacoffee.com/benno094). Thanks for your support!")
         if range_good:
             # Check if previews already exist
             if 'image_0' not in st.session_state:
