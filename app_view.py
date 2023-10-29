@@ -11,14 +11,23 @@ class AppView:
 
     def display(self):
         range_good = False
-        with st.sidebar:            
+        
+        st.info("Before a login system is implemented you will have to enter an OpenAI API key each time to use the site without limitations. [Buy Me A Coffee](https://www.buymeacoffee.com/benno094) to support development of the site.")
+
+        with st.sidebar:
+            st.session_state['API_KEY'] = st.text_input("Enter OpenAI API key (Get one [here](https://auth0.openai.com/u/signup/))", type = "password")
             languages = ['English', 'Bengali', 'French', 'German', 'Hindi', 'Urdu', 'Mandarin Chinese', 'Polish', 'Portuguese', 'Spanish', 'Arabic']
             st.session_state["lang"] = st.selectbox("Returned language", languages, on_change=self.clear_data)
             col1, col2 = st.columns(2)
             with col1:            
                 start = st.number_input('Starting page', value=1, min_value=1, format='%i')
             with col2:
-                num = st.number_input('Number of pages', value=10, min_value=1, max_value=15, format='%d')
+                if st.session_state['API_KEY'] == "":
+                    num = st.number_input('Number of pages', value=1, format='%d', disabled = True)
+                else:
+                    num = st.number_input('Number of pages', value=10, min_value=1, max_value=15, format='%d')
+            if st.session_state['API_KEY'] == "":
+                st.warning("Enter API key to remove limitations")
 
             file = st.file_uploader("Choose a file", type=["pdf"])
             if file:                
@@ -38,7 +47,6 @@ class AppView:
             st.write("[Feedback](mailto:pdf.to.anki@gmail.com)")
 
         # TODO: Cache all created flashcards
-        st.info("It's come to the point where word has got around and the number of users is increasing. The extra users are causing openai API costs to increase. We don't want to have to implement any subscription system, so here is a way to support the site and keep it free: [Buy Me A Coffee](https://www.buymeacoffee.com/benno094). Thanks for your support!")
         if range_good:
             # Check if previews already exist
             if 'image_0' not in st.session_state:
@@ -76,7 +84,9 @@ class AppView:
                 else:
                     label = ""
 
-                with st.expander(f"Page {i + 1}/{st.session_state.get('page_count', '')}{label}", expanded=coll):
+                with st.expander(f"Page {i + 1}/{st.session_state.get('page_count', '')}{label}", expanded=coll):                    
+                    if st.session_state['API_KEY'] == "":
+                        st.warning("Enter API key to generate more than two flashcards")
                     col1, col2 = st.columns([0.6, 0.4])
                     # Display the image in the first column
                     with col1:
@@ -98,6 +108,8 @@ class AppView:
 
                             # Check if GPT returned something usable, else remove entry and throw error
                             if flashcards:
+                                if st.session_state['API_KEY'] == "":
+                                    flashcards = flashcards[:2]
                                 length = len(flashcards)
                             else:
                                 del st.session_state['flashcards_' + str(i)]

@@ -6,8 +6,6 @@ import re
 import streamlit as st
 import streamlit.components.v1 as components
 
-openai.api_key == st.secrets["OPENAI_API_KEY"]
-
 # Custom component to call AnkiConnect on client side
 parent_dir = os.path.dirname(os.path.abspath(__file__))
 build_dir = os.path.join(parent_dir, "API/frontend/build")
@@ -44,6 +42,11 @@ You are receiving the text from one slide of a lecture. Use the following princi
         new_chunk = prompt + 'Text: """\n' + new_chunk + '\n"""'
 
         behaviour = "You are a flashcard making assistant. Follow the user's requirements carefully and to the letter."
+
+        if st.session_state['API_KEY'] == "":
+            openai.api_key = st.secrets['OPENAI_API_KEY']
+        else:
+            openai.api_key = st.session_state['API_KEY']
 
         max_retries = 3
         retries = 0
@@ -111,7 +114,7 @@ You are receiving the text from one slide of a lecture. Use the following princi
                 
                 raise Exception("Error: No completion response returned.")
             except openai.OpenAIError as e:
-                print(f"Error: {e}. Retrying...")
+                st.toast(f"Error: {e}. Retrying...")
                 retries += 1
 
     def add_to_anki(self, cards, page):
