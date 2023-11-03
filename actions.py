@@ -109,11 +109,13 @@ You are receiving the text from one slide of a lecture. Use the following princi
                 
                 # TODO: Make sure calls are not repeated
                 print(f"Call no. {str(retries + 1)} for slide {str(page + 1)}")
-                print("Name: ", completion.choices[0].message.function_call.name)
+                function_call = completion.choices[0].message.function_call.name
+                if function_call:
+                    print("Name: ", completion.choices[0].message.function_call.name)
 
-                if completion.choices[0].message.function_call.name == "null_function":
-                    st.session_state[f"{str(page)}_is_title"] = True
-                    return None
+                    if completion.choices[0].message.function_call.name == "null_function":
+                        st.session_state[f"{str(page)}_is_title"] = True
+                        return None
 
                 try:
                     response = completion.choices[0].message.function_call.arguments
