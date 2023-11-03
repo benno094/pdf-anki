@@ -11,9 +11,11 @@ class AppView:
 
     def display(self):
         self.actions.check_API()
+        # TODO: Add all variable to session state
         range_good = False
         with st.sidebar:
             st.warning("This is the test site. Use the stable version over at [PDF-Anki](https://pdf-anki.streamlit.app/)", icon="⚠️")
+            # TODO: Clear cache when changing language
             st.session_state["lang"] = st.selectbox("Returned language", ('English', 'German'))
             col1, col2 = st.columns(2)
             with col1:            
@@ -80,6 +82,7 @@ class AppView:
 
                 # Create an expander for each image and its corresponding flashcards
                 # If cards have been added collapse
+                # TODO: Change variable when manually collapsed
                 if "flashcards_" + str(i) + "_added" in st.session_state:
                     coll = False
                 else:
@@ -129,6 +132,7 @@ class AppView:
                             # TODO: Deal with cards that are returned with "no information"
                             for i, flashcard in enumerate(flashcards):
                                 with tabs[i]:
+                                    # TODO: Add option to modify a flashcard using GPT with a individual prompt/button
                                     # TODO: Make function for creation of flashcards
                                     # Default state: display flashcard
                                     if f"fc_active_{p, i}" not in st.session_state:
