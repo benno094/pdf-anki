@@ -10,9 +10,11 @@ class AppView:
         self.actions = actions
 
     def display(self):
+        # TODO: Only do one check and then create button to check for Anki. Add button to refresh decks.
         self.actions.check_API()
         # TODO: Add all variable to session state
         range_good = False
+        # TODO: Add small preview images to sidebar
         with st.sidebar:
             st.warning("This is the test site. Use the stable version over at [PDF-Anki](https://pdf-anki.streamlit.app/)", icon="⚠️")
             # TODO: Clear cache when changing language

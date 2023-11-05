@@ -1,5 +1,8 @@
 import { Streamlit, RenderData } from "streamlit-component-lib"
 
+// TODO: Add tablet functionality using URL-schemes
+// Force sync after adding
+
 // Adds note to a deck
 async function addFlashcard(deck: string, front: string, back: string, tags: string) {
   try {

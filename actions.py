@@ -49,8 +49,7 @@ You are receiving the text from one slide of a lecture. Use the following princi
 - Answers should be on the back and not included in the question.
 - Only add each piece of information once.
 - Questions and answers must be in """ + st.session_state["lang"] + """.
-- No questions about the uni, course, professor or auxiliary slide information.
-- For title slide just return "no information"
+- Ignore information about the uni, course, professor or auxiliary slide information.
 - If whole slide fits on one flashcard, do that.
 """
         
