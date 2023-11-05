@@ -11,7 +11,9 @@ class AppView:
 
     def display(self):
         # TODO: Only do one check and then create button to check for Anki. Add button to refresh decks.
-        self.actions.check_API()
+        if "api_reachable" not in st.session_state:
+            print("Checking API")
+            st.session_state["api_reachable"] = self.actions.check_API()
         # TODO: Add all variable to session state
         range_good = False
         # TODO: Add small preview images to sidebar
@@ -39,17 +41,30 @@ class AppView:
                     range_good = True
             # else: TODO: Clear file data
             #     self.clear_data()
-            if "decks" in st.session_state:
-                # TODO: Add refresh deck button and check to make sure deck actually exists when adding to it
-                st.selectbox(
-                'Choose a deck',
-                st.session_state['decks'],
-                key="deck"
-                )                
-                st.session_state["api_reachable"] = True
+            st.write(st.session_state["api_reachable"])
+            if st.session_state["api_reachable"] == "granted":
+                if "decks" in st.session_state:
+                    st.selectbox(
+                    'Choose a deck',
+                    st.session_state['decks'],
+                    key="deck"
+                    )
+                else:
+                    if "decks" not in st.session_state:
+                        self.actions.get_decks()
+                if st.button("Refresh decks", key = "deck_refresh_btn"):                        
+                    if "decks" in st.session_state:
+                        del st.session_state["decks"]
+                    self.actions.get_decks("refresh_decks")
+            elif st.session_state["api_reachable"] == "denied":
+                st.write('Permission denied -- Remove "https://pdf-anki.streamlit.app" from "ignoreOriginList" under Tools -> Addons -> Config, then restart Anki.')
+                # if st.button("Connect AnkiConnect", key = "anki_connect_btn"):
+                #     st.session_state["api_reachable"] = self.actions.check_API()
             else:
-                self.actions.get_decks()
                 st.markdown("**To add flashcards to Anki:**\n- Anki needs to be running with AnkiConnect installed (Addon #: 2055492159)\n- A popup from Anki will appear $\\rightarrow$ choose yes.")
+                # if st.button("Connect AnkiConnect", key = "anki_connect_btn"):
+                #     st.session_state["api_reachable"] = self.actions.check_API()
+
             st.divider()
             st.write("Disclaimer: Use at your own risk.")
             st.write("[Feedback](mailto:pdf.to.anki@gmail.com)")
@@ -171,9 +186,8 @@ class AppView:
                             else:
                                 no_cards = False                                
                             if "flashcards_" + str(p) + "_added" not in st.session_state:
-                                self.actions.check_API("API_check_added")
                                 if "api_reachable" in st.session_state:
-                                    if st.session_state["api_reachable"] == True:
+                                    if st.session_state["api_reachable"] == "granted":
                                         st.button(f"Add {st.session_state['flashcards_' + str(p) + '_to_add']} flashcard(s) to Anki", key=f"add_{str(p)}", on_click=self.prepare_and_add_flashcards_to_anki, args=[p], disabled=no_cards)
         else:
             if 'image_0' in st.session_state:

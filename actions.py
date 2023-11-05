@@ -24,11 +24,8 @@ class Actions:
     # TODO: Extract pictures from PDF to add to flashcards.
     # TODO: Detect if page is mainly diagram and don't extract text.
     def check_API(self, key=None):
-        # TODO: Fix api_reachable logic
-        if "api_reachable" not in st.session_state:
-            result = API(action="reqPerm", key=key)
-            if result == "granted":
-                st.session_state["api_reachable"] = True
+        response = API(action="reqPerm", key=key)
+        return response
 
     def get_decks(self, key=None):
         decks = API(action="getDecks", key=key)
@@ -133,7 +130,7 @@ You are receiving the text from one slide of a lecture. Use the following princi
     def add_to_anki(self, cards, page):
         deck = st.session_state['deck']
         try:
-            self.check_API("API_check")
+            # self.check_API("API_check")
             if st.session_state["api_reachable"]:
                 try:
                     # TODO: Process response from API
