@@ -24,10 +24,13 @@ class Actions:
     # TODO: Extract pictures from PDF to add to flashcards.
     # TODO: Detect if page is mainly diagram and don't extract text.
     def check_API(self, key=None):
+        print("API checked")
         response = API(action="reqPerm", key=key)
-        return response
+        if response is not False and response is not None:
+            st.session_state['api_perms'] = response
 
     def get_decks(self, key=None):
+        print("Decks checked")
         decks = API(action="getDecks", key=key)
         if decks is not False and decks is not None:
             st.session_state['decks'] = decks
@@ -131,7 +134,7 @@ You are receiving the text from one slide of a lecture. Use the following princi
         deck = st.session_state['deck']
         try:
             # self.check_API("API_check")
-            if st.session_state["api_reachable"]:
+            if st.session_state["api_perms"]:
                 try:
                     # TODO: Process response from API
                     for card in cards:
