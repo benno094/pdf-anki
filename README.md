@@ -8,6 +8,7 @@ Version 0.51 alpha (Not perfect, but usable).
 
 ## Requirements:
 
+- An OpenAI API key
 - Anki running with AnkiConnect installed (Addon #: 2055492159)
 
 *If compiling to run locally:*
@@ -16,14 +17,16 @@ Version 0.51 alpha (Not perfect, but usable).
 
 ## Usage:
 
-1. Select a page range and a language for the flashcards.
-2. Choose a PDF file. Cards will automatically be created for each page.
-3. Flash cards are displayed and can then be modified before being added to Anki.
+1. Add an OpenAI API key.
+2. Select a page range and a language for the flashcards.
+3. Choose a PDF file. Cards will automatically be created for each page.
+4. Flash cards are displayed and can then be modified before being added to Anki.
 
 ### To do:
 
 - Add option to log in to save preferences
 - Include images
+- Check if dependencies are all really needed
 - Option to add card
 - Allow user to change prompt options
 - Add formatting in response
