@@ -133,20 +133,13 @@ You are receiving the text from one slide of a lecture. Use the following princi
     def add_to_anki(self, cards, page):
         deck = st.session_state['deck']
         try:
-            # self.check_API("API_check")
-            if st.session_state["api_perms"]:
-                try:
-                    # TODO: Process response from API
-                    for card in cards:
-                        front = card['front']
-                        back = card['back']
-                        tags = st.session_state["flashcards_" + str(page) + "_tags"]
-                        API("addCard", deck = deck, front = front, back = back, tags = tags)
-                    return True
-                except Exception as e:
-                    raise ValueError(e)
-            else:
-                return False
+            # TODO: Process response from API
+            for card in cards:
+                front = card['front']
+                back = card['back']
+                tags = st.session_state["flashcards_" + str(page) + "_tags"]
+                API("addCard", deck = deck, front = front, back = back, tags = tags)
+            return True
         except Exception as e:
             raise ValueError(e)
 
