@@ -11,8 +11,7 @@ class AppView:
 
     def display(self):
         # TODO: Only do one check and then create button to check for Anki. Add button to refresh decks.
-        if "api_checked" not in st.session_state:
-            st.session_state["api_checked"] = True
+        if "api_perms" not in st.session_state:
             self.actions.check_API()
         # TODO: Add all variable to session state
         range_good = False
@@ -42,7 +41,7 @@ class AppView:
                 
             # else: TODO: Clear file data
             #     self.clear_data()
-                
+
             if "decks" in st.session_state:
                 st.selectbox(
                 'Choose a deck',
@@ -186,9 +185,7 @@ class AppView:
                                 else:
                                     no_cards = False                                
                                 if "flashcards_" + str(p) + "_added" not in st.session_state:
-                                    if "api_perms" in st.session_state:
-                                        if st.session_state["api_perms"]:
-                                            st.button(f"Add {st.session_state['flashcards_' + str(p) + '_to_add']} flashcard(s) to Anki", key=f"add_{str(p)}", on_click=self.prepare_and_add_flashcards_to_anki, args=[p], disabled=no_cards)
+                                    st.button(f"Add {st.session_state['flashcards_' + str(p) + '_to_add']} flashcard(s) to Anki", key=f"add_{str(p)}", on_click=self.prepare_and_add_flashcards_to_anki, args=[p], disabled=no_cards)
             else:
                 if "decks" not in st.session_state:
                     st.warning("Start Anki with AnkiConnect installed or tick checkbox to use without")
