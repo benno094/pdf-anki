@@ -12,8 +12,9 @@ class AppView:
 
     def display(self):
         # TODO: Only do one check and then create button to check for Anki. Add button to refresh decks.
-        if "api_perms" not in st.session_state:
-            self.actions.check_API()
+        if "no_ankiconnect" in st.session_state and st.session_state.no_ankiconnect == False:
+            if "api_perms" not in st.session_state:
+                self.actions.check_API()
         # TODO: Add all variable to session state
         range_good = False
         
