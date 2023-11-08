@@ -18,19 +18,22 @@ class AppView:
         
         st.info("Before a login system is implemented you will have to enter an OpenAI API key each time to use the site without limitations. [Buy Me A Coffee](https://www.buymeacoffee.com/benno094) to support development of the site.")
 
-        # TODO: Add small preview images to sidebar
+        # TODO: Add small preview images to sidebar and maybe a slider to choose page range or selection of images
         with st.sidebar:
-            st.session_state['API_KEY'] = st.text_input("Enter OpenAI API key (Get one [here](https://platform.openai.com/account/api-keys))", type = "password")
+            if "OPENAI_API_KEY" not in st.secrets:
+                st.session_state['API_KEY'] = st.text_input("Enter OpenAI API key (Get one [here](https://platform.openai.com/account/api-keys))", type = "password")
+            else:
+                st.session_state['API_KEY'] = st.secrets.OPENAI_API_KEY
             languages = ['English', 'Bengali', 'French', 'German', 'Hindi', 'Urdu', 'Mandarin Chinese', 'Polish', 'Portuguese', 'Spanish', 'Arabic']
             st.session_state["lang"] = st.selectbox("Returned language", languages, on_change=self.clear_data)
             col1, col2 = st.columns(2)
             with col1:            
-                start = st.number_input('Starting page', value=1, min_value=1, format='%i', key="start_page")
+                start = st.number_input('Starting page', value=1, min_value=1, format='%i')
             with col2:
                 if st.session_state['API_KEY'] == "":
                     num = st.number_input('Number of pages', value=1, format='%d', disabled = True)
                 else:
-                    num = st.number_input('Number of pages', value=10, min_value=1, max_value=15, format='%d')
+                    num = st.number_input('Number of pages', value=10, min_value=1, format='%d')
             if st.session_state['API_KEY'] == "":
                 st.warning("Enter API key to remove limitations")
 
@@ -46,9 +49,6 @@ class AppView:
                     range_good = False
                 else:
                     range_good = True
-                
-            # else: TODO: Clear file data
-            #     self.clear_data()
 
             if "decks" in st.session_state:
                 st.selectbox(
@@ -60,16 +60,13 @@ class AppView:
                     if "decks" in st.session_state:
                         del st.session_state["decks"]
                     self.actions.get_decks()
+                st.markdown("**Note:** Note type ['Basic'](https://docs.ankiweb.net/getting-started.html#note-types) must exist for cards to be added.")
                 st.session_state["no_ankiconnect"] = False
             else:
                 st.checkbox(label = "Use without AnkiConnect", key = "no_ankiconnect")
                 if st.session_state["no_ankiconnect"] == False:
                     self.actions.get_decks()
-                    st.markdown("**To add flashcards to Anki:**\n- Anki needs to be running with AnkiConnect installed (Addon #: 2055492159)\n- A popup from Anki will appear $\\rightarrow$ choose yes.")
-                    if st.button("Connect AnkiConnect", key = "anki_connect_btn"):
-                        self.actions.check_API()
-                        self.actions.get_decks()
-
+                    st.markdown("**To add flashcards to Anki:**\n- Anki needs to be running with AnkiConnect installed (Addon #: 2055492159)\n- A popup from Anki will appear $\\rightarrow$ choose yes.\n **Note:** If unable to connect, disable ad/tracker-blocker for the site.")
             st.divider()
             st.write("Disclaimer: Use at your own risk.")
             st.write("[Feedback](mailto:pdf.to.anki@gmail.com)")
@@ -92,11 +89,13 @@ class AppView:
                         st.session_state['image_' + str(i)] = byte_im
                         st.session_state['text_' + str(i)] = page.get_text()
                     doc.close()
+                
+                    # else: TODO: Clear file data
+                    #     self.clear_data()
 
                 # Loop through the pages
-                page_count = st.session_state['page_count']
                 for i in range(start - 1, start + num - 1):
-                    if i == page_count:
+                    if i == st.session_state['page_count']:
                         break
                     # st.toast("Generating flashcards for page " + str(i + 1) + "/" + str(st.session_state['page_count']))                
                     if f"{i}_is_title" not in st.session_state:
@@ -116,13 +115,13 @@ class AppView:
                     else:
                         label = ""
 
-                with st.expander(f"Page {i + 1}/{st.session_state.get('page_count', '')}{label}", expanded=coll):                    
-                    if st.session_state['API_KEY'] == "":
-                        st.warning("Enter API key to generate more than two flashcards")
-                    col1, col2 = st.columns([0.6, 0.4])
-                    # Display the image in the first column
-                    with col1:
-                        st.image(st.session_state['image_' + str(i)])
+                    with st.expander(f"Page {i + 1}/{st.session_state.get('page_count', '')}{label}", expanded=coll):                    
+                        if st.session_state['API_KEY'] == "":
+                            st.warning("Enter API key to generate more than two flashcards")
+                        col1, col2 = st.columns([0.6, 0.4])
+                        # Display the image in the first column
+                        with col1:
+                            st.image(st.session_state['image_' + str(i)])
 
                         # If flashcards exist for the page, show them and show 'Add to Anki' button
                         # Otherwise, show 'generate flashcards' button              
@@ -138,20 +137,22 @@ class AppView:
                                     flashcards = None
                                     st.info("No flashcards generated for this slide as it doesn't contain relevant information.")
 
-                            # Check if GPT returned something usable, else remove entry and throw error
-                            if flashcards:
-                                if st.session_state['API_KEY'] == "":
-                                    flashcards = flashcards[:2]
-                                length = len(flashcards)
-                            else:
-                                del st.session_state['flashcards_' + str(i)]
-                                if st.button("Regenerate flashcards", key=f"reg_{i}"):
-                                    self.generate_flashcards(i, regen = True)
-                            # Create a tab for each flashcard
-                            tabs = st.tabs([f"#{i+1}" for i in range(length)])
-                            if "flashcards_" + str(i) + "_count" not in st.session_state:
-                                st.session_state["flashcards_" + str(i) + "_count"] = length
-                                st.session_state["flashcards_" + str(i) + "_to_add"] = length
+                                # Check if GPT returned something usable, else remove entry and throw error
+                                if flashcards:
+                                    if st.session_state['API_KEY'] == "":
+                                        if len(flashcards) > 2:
+                                            flashcards = flashcards[:2]
+                                    length = len(flashcards)
+                                else:
+                                    del st.session_state['flashcards_' + str(i)]
+                                    if st.button("Regenerate flashcards", key=f"reg_{i}"):
+                                        self.generate_flashcards(i, regen = True)
+                                    continue
+                                # Create a tab for each flashcard
+                                tabs = st.tabs([f"#{i+1}" for i in range(length)])
+                                if "flashcards_" + str(i) + "_count" not in st.session_state:
+                                    st.session_state["flashcards_" + str(i) + "_count"] = length
+                                    st.session_state["flashcards_" + str(i) + "_to_add"] = length
 
                                 # TODO: Deal with cards that are returned with "no information"
                                 for i, flashcard in enumerate(flashcards):
@@ -183,17 +184,19 @@ class AppView:
                                             st.text_area(f"Back", value=flashcard["back"], key=f"back_{p, i}", disabled=False)
 
                                             st.button("Disable flashcard", key=f"del_{p, i}", on_click=self.disable_flashcard, args=[p, i])
-                                # Create tag for flashcard
-                                if "flashcards_" + str(p) + "_tags" not in st.session_state:
-                                    st.session_state["flashcards_" + str(p) + "_tags"] = st.session_state["file_name"].replace(' ', '_').replace('.pdf', '') + "_page_" + str(p + 1)
-                                st.text_input("Tag:", value = st.session_state["flashcards_" + str(p) + "_tags"], key = f"tag_{str(p)}")
-                                # Blank out 'add to Anki' button if no cards
-                                if st.session_state["flashcards_" + str(p) + "_to_add"] == 0:
-                                    no_cards = True
-                                else:
-                                    no_cards = False                                
-                                if "flashcards_" + str(p) + "_added" not in st.session_state:
-                                    st.button(f"Add {st.session_state['flashcards_' + str(p) + '_to_add']} flashcard(s) to Anki", key=f"add_{str(p)}", on_click=self.prepare_and_add_flashcards_to_anki, args=[p], disabled=no_cards)
+                                col1, col2 = st.columns([0.4,1])
+                                with col1:
+                                    # Blank out 'add to Anki' button if no cards
+                                    if st.session_state["flashcards_" + str(p) + "_to_add"] == 0:
+                                        no_cards = True
+                                    else:
+                                        no_cards = False                                
+                                    if "flashcards_" + str(p) + "_added" not in st.session_state:
+                                        st.button(f"Add {st.session_state['flashcards_' + str(p) + '_to_add']} flashcard(s) to Anki", key=f"add_{str(p)}", on_click=self.prepare_and_add_flashcards_to_anki, args=[p], disabled=no_cards)
+                                with col2:
+                                    if "flashcards_" + str(p) + "_tags" not in st.session_state:
+                                        st.session_state["flashcards_" + str(p) + "_tags"] = st.session_state["file_name"].replace(' ', '_').replace('.pdf', '') + "_page_" + str(p + 1)
+                                    st.text_input("Tag:", value = st.session_state["flashcards_" + str(p) + "_tags"], key = f"tag_{str(p)}")
             else:
                 if "decks" not in st.session_state:
                     st.warning("Start Anki with AnkiConnect installed or tick checkbox to use without")
@@ -243,7 +246,6 @@ class AppView:
             with st.sidebar:
                 st.warning(e, icon="⚠️")
 
-    # @st.cache_data
     def generate_flashcards(self, page, regen = None):
         if regen:
             if f"{page}_is_title" in st.session_state:
