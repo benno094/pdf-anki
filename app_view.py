@@ -12,7 +12,7 @@ class AppView:
 
     def display(self):
         # TODO: Only do one check and then create button to check for Anki. Add button to refresh decks.
-        if "decks" not in st.session_state:
+        if "api_perms" not in st.session_state:
             self.actions.check_API()
         # TODO: Add all variable to session state
         range_good = False
@@ -64,7 +64,7 @@ class AppView:
                 st.checkbox(label = "Use without AnkiConnect", key = "no_ankiconnect")
                 if st.session_state["no_ankiconnect"] == False:
                     self.actions.get_decks()
-                    st.markdown("**To add flashcards to Anki:**\n- Anki needs to be running with AnkiConnect installed (Addon #: 2055492159)\n- A popup from Anki will appear $\\rightarrow$ choose yes.\n **Note:** If unable to connect, disable ad/tracker-blocker for the site.")
+                    st.markdown("**To add flashcards to Anki:**\n- Anki needs to be running with AnkiConnect installed (Addon #: 2055492159)\n- A popup from Anki will appear $\\rightarrow$ choose yes.\n\n **Note:** If unable to connect, disable ad/tracker-blocker for the site.")
             st.divider()
             st.write("Disclaimer: Use at your own risk.")
             st.write("[Feedback](mailto:pdf.to.anki@gmail.com)")
