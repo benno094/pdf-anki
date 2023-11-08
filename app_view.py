@@ -1,4 +1,5 @@
 # AppView.py
+import gc
 import io
 import json
 import streamlit as st
@@ -11,7 +12,7 @@ class AppView:
 
     def display(self):
         # TODO: Only do one check and then create button to check for Anki. Add button to refresh decks.
-        if "api_perms" not in st.session_state:
+        if "decks" not in st.session_state:
             self.actions.check_API()
         # TODO: Add all variable to session state
         range_good = False
@@ -88,6 +89,11 @@ class AppView:
 
                         st.session_state['image_' + str(i)] = byte_im
                         st.session_state['text_' + str(i)] = page.get_text()
+
+                        # # Explicitly delete the objects and call garbage collector
+                        # del pix, img, buf, byte_im
+                        # gc.collect()
+
                     doc.close()
                 
                     # else: TODO: Clear file data
