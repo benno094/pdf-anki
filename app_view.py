@@ -21,10 +21,7 @@ class AppView:
 
         # TODO: Add small preview images to sidebar and maybe a slider to choose page range or selection of images
         with st.sidebar:
-            if "OPENAI_API_KEY" not in st.secrets:
-                st.session_state['API_KEY'] = st.text_input("Enter OpenAI API key (Get one [here](https://platform.openai.com/account/api-keys))", type = "password")
-            else:
-                st.session_state['API_KEY'] = st.secrets.OPENAI_API_KEY
+            st.session_state['API_KEY'] = st.text_input("Enter OpenAI API key (Get one [here](https://platform.openai.com/account/api-keys))", type = "password")
             languages = ['English', 'Bengali', 'French', 'German', 'Hindi', 'Urdu', 'Mandarin Chinese', 'Polish', 'Portuguese', 'Spanish', 'Arabic']
             st.session_state["lang"] = st.selectbox("Returned language", languages, on_change=self.clear_data)
             col1, col2 = st.columns(2)
