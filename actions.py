@@ -1,18 +1,19 @@
 # actions.py
 import json
 import os
-import openai
+from openai import OpenAI
 import re
 import streamlit as st
 import streamlit.components.v1 as components
+client = OpenAI()
 
 # Custom component to call AnkiConnect on client side
 parent_dir = os.path.dirname(os.path.abspath(__file__))
 build_dir = os.path.join(parent_dir, "API/frontend/build")
-_API = components.declare_component("my_component", path=build_dir)
+_API = components.declare_component("API", path=build_dir)
 
-def API(deck, front, back, tags):
-    component_value = _API(deck=deck, front=front, back=back, tags=tags)
+def API(action, key=None, deck=None, front=None, back=None, tags=None):
+    component_value = _API(action=action, key=key, deck=deck, front=front, back=back, tags=tags)
     return component_value
 
 class Actions:
@@ -21,12 +22,26 @@ class Actions:
 
     # TODO: Extract pictures from PDF to add to flashcards.
     # TODO: Detect if page is mainly diagram and don't extract text.
+    def check_API(self, key=None):
+        print("API checked")
+        response = API(action="reqPerm", key=key)
+        if response is not False and response is not None:
+            st.session_state['api_perms'] = response
+
+    def get_decks(self, key=None):
+        print("Decks checked")
+        decks = API(action="getDecks", key=key)
+        if decks is not False and decks is not None:
+            st.session_state['decks'] = decks
+
     def send_to_gpt(self, page):
+        # TODO: Make function call like mentioned in openai docs
         prompt = """
 You are receiving the text from one slide of a lecture. Use the following principles when making the flashcards:
 
+- Check if the slide contains specific keywords or phrases related to subject-specific information and call flashcard_function.
 - If slide is just a table of contents, learning objectives, introductory or a title slide call null_function.
-- If slide appears to only include a table call null_function.
+- If slide appears to only include a table or only a title call null_function.
 - Create Anki flashcards for an exam at university level.
 - Each card is standalone.
 - Short answers.
@@ -34,7 +49,7 @@ You are receiving the text from one slide of a lecture. Use the following princi
 - Answers should be on the back and not included in the question.
 - Only add each piece of information once.
 - Questions and answers must be in """ + st.session_state["lang"] + """.
-- No questions about the uni, course, professor or auxiliary slide information.
+- Ignore information about the uni, course, professor or auxiliary slide information.
 - If whole slide fits on one flashcard, do that.
 """
         
@@ -43,91 +58,83 @@ You are receiving the text from one slide of a lecture. Use the following princi
 
         behaviour = "You are a flashcard making assistant. Follow the user's requirements carefully and to the letter."
 
-        if st.session_state['API_KEY'] == "":
-            openai.api_key = st.secrets['OPENAI_API_KEY']
-        else:
-            openai.api_key = st.session_state['API_KEY']
+        client.api_key = st.session_state['API_KEY']
 
         max_retries = 3
         retries = 0
         while retries < max_retries:
-            try:
-                completion = openai.ChatCompletion.create(
-                    model="gpt-3.5-turbo",
-                    messages=[
-                        {
-                            "role": "system",
-                            "content": behaviour
-                        },
-                        {
-                            "role": "user",
-                            "content": new_chunk
-                        }
-                    ],
-                    functions=[
-                        {
-                            "name": "flashcard_function",
-                            "parameters": {
-                                "type": "object",
-                                "properties": {
-                                    "flashcards": {
-                                        "type": "array",
-                                            "items": {
-                                                "type": "object",
-                                                "properties": {
-                                                "front": {"type": "string", "description": "Front side of the flashcard; a question"},
-                                                "back": {"type": "string", "description": "Back side of the flashcard; the answer"}
-                                                }
+            completion = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": behaviour
+                    },
+                    {
+                        "role": "user",
+                        "content": new_chunk
+                    }
+                ],
+                functions=[
+                    {
+                        "name": "flashcard_function",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "flashcards": {
+                                    "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                            "front": {"type": "string", "description": "Front side of the flashcard; a question"},
+                                            "back": {"type": "string", "description": "Back side of the flashcard; the answer"}
                                             }
-                                    }
+                                        }
                                 }
-                            }  
-                        },
-                        {
-                            "name": "null_function",
-                            "parameters": {
-                                "type": "object",
-                                "properties": {}
                             }
+                        }  
+                    },
+                    {
+                        "name": "null_function",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {}
                         }
-                    ],
-                    # TODO: play with temperature
-                    temperature=0.9,
-                    request_timeout=25,
-                )
-                
-                print(f"Call no. {str(retries + 1)} for slide {str(page + 1)}")
-                print(completion.choices[0].message.function_call.name)
+                    }
+                ],
+                # TODO: play with temperature
+                temperature=0.9,
+            )
+            
+            # TODO: Make sure calls are not repeated
+            print(f"Call no. {str(retries + 1)} for slide {str(page + 1)}")                
+            if completion.choices[0].message.function_call:
 
-                if completion.choices[0].message.function_call.name == "null_function":
+                if completion.choices[0].message.function_call.name == "null_function": 
                     st.session_state[f"{str(page)}_is_title"] = True
                     return None
 
-                try:
-                    response = completion.choices[0].message.function_call.arguments
-                    if response:
-                        return response
-                except AttributeError:
-                    print("Error: No function_call in the response. Retrying...")
-                    retries += 1
-                    continue
-                
-                raise Exception("Error: No completion response returned.")
-            except openai.OpenAIError as e:
-                st.toast(f"Error: {e}. Retrying...")
+            try:
+                response = completion.choices[0].message.function_call.arguments
+                if response:
+                    return response
+            except AttributeError:
+                print("Error: No function_call in the response. Retrying...")
                 retries += 1
+                continue
+
+            raise Exception("Error: No completion response returned.")
 
     def add_to_anki(self, cards, page):
+        deck = st.session_state['deck']
         try:
-            # TODO: implement new API check
-            
+            # TODO: Process response from API
             for card in cards:
                 front = card['front']
                 back = card['back']
                 tags = st.session_state["flashcards_" + str(page) + "_tags"]
-                API("MyDeck", front, back, tags)
+                API("addCard", deck = deck, front = front, back = back, tags = tags)
             return True
-
         except Exception as e:
             raise ValueError(e)
 
