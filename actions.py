@@ -109,7 +109,6 @@ You are receiving the text from one slide of a lecture. Use the following princi
             # TODO: Make sure calls are not repeated
             print(f"Call no. {str(retries + 1)} for slide {str(page + 1)}")                
             if completion.choices[0].message.function_call:
-                print("Name: ", completion.choices[0].message.function_call)
 
                 if completion.choices[0].message.function_call.name == "null_function": 
                     st.session_state[f"{str(page)}_is_title"] = True
