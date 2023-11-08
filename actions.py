@@ -58,7 +58,10 @@ You are receiving the text from one slide of a lecture. Use the following princi
 
         behaviour = "You are a flashcard making assistant. Follow the user's requirements carefully and to the letter."
 
-        client.api_key = st.session_state['API_KEY']
+        if st.session_state['API_KEY'] == "":
+            client.api_key = st.secrets['OPENAI_API_KEY']
+        else:
+            client.api_key = st.session_state['API_KEY']
 
         max_retries = 3
         retries = 0
