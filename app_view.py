@@ -1,5 +1,4 @@
 # AppView.py
-import gc
 import io
 import json
 import streamlit as st
@@ -11,6 +10,8 @@ class AppView:
         self.actions = actions
 
     def display(self):
+        dev = False
+
         # TODO: Only do one check and then create button to check for Anki. Add button to refresh decks.
         if "no_ankiconnect" in st.session_state and st.session_state.no_ankiconnect == False:
             if "api_perms" not in st.session_state:
@@ -22,7 +23,10 @@ class AppView:
 
         # TODO: Add small preview images to sidebar and maybe a slider to choose page range or selection of images
         with st.sidebar:
-            st.session_state['API_KEY'] = st.text_input("Enter OpenAI API key (Get one [here](https://platform.openai.com/account/api-keys))", type = "password")
+            if dev == True:
+                st.session_state['API_KEY'] = st.secrets.OPENAI_API_KEY
+            else:
+                st.session_state['API_KEY'] = st.text_input("Enter OpenAI API key (Get one [here](https://platform.openai.com/account/api-keys))", type = "password")
             languages = ['English', 'Bengali', 'French', 'German', 'Hindi', 'Urdu', 'Mandarin Chinese', 'Polish', 'Portuguese', 'Spanish', 'Arabic']
             st.session_state["lang"] = st.selectbox("Returned language", languages, on_change=self.clear_data)
             col1, col2 = st.columns(2)
@@ -81,21 +85,14 @@ class AppView:
                         pix = page.get_pixmap(dpi=100)
                         img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
 
-                        buf = io.BytesIO()
-                        img.save(buf, format='JPEG', quality=80)  # Adjust the quality as needed
-                        byte_im = buf.getvalue()
+                        with io.BytesIO() as buf:
+                            img.save(buf, format='JPEG', quality=80)
+                            byte_im = buf.getvalue()
 
-                        st.session_state['image_' + str(i)] = byte_im
-                        st.session_state['text_' + str(i)] = page.get_text()
-
-                        # # Explicitly delete the objects and call garbage collector
-                        # del pix, img, buf, byte_im
-                        # gc.collect()
+                            st.session_state['image_' + str(i)] = byte_im
+                            st.session_state['text_' + str(i)] = page.get_text()
 
                     doc.close()
-                
-                    # else: TODO: Clear file data
-                    #     self.clear_data()
 
                 # Loop through the pages
                 for i in range(start - 1, start + num - 1):
