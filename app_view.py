@@ -191,16 +191,20 @@ class AppView:
                                     if st.session_state["flashcards_" + str(p) + "_to_add"] == 0:
                                         no_cards = True
                                     else:
-                                        no_cards = False                                
+                                        no_cards = False
+                                    if st.session_state.no_ankiconnect == True:
+                                        no_cards = True
                                     if "flashcards_" + str(p) + "_added" not in st.session_state:
-                                        st.button(f"Add {st.session_state['flashcards_' + str(p) + '_to_add']} flashcard(s) to Anki", key=f"add_{str(p)}", on_click=self.prepare_and_add_flashcards_to_anki, args=[p], disabled=no_cards)
+                                        st.button(f"Add {st.session_state['flashcards_' + str(p) + '_to_add']} flashcard(s) to Anki", key=f"add_{str(p)}", on_click=self.prepare_and_add_flashcards_to_anki, args=[p], disabled=no_cards)                                    
                                 with col2:
                                     if "flashcards_" + str(p) + "_tags" not in st.session_state:
                                         st.session_state["flashcards_" + str(p) + "_tags"] = st.session_state["file_name"].replace(' ', '_').replace('.pdf', '') + "_page_" + str(p + 1)
                                     st.text_input("Tag:", value = st.session_state["flashcards_" + str(p) + "_tags"], key = f"tag_{str(p)}")
+                                if st.session_state.no_ankiconnect == True:
+                                    st.info("You need AnkiConnect to be able to add cards")
             else:
                 if "decks" not in st.session_state:
-                    st.warning("Start Anki with AnkiConnect installed or tick checkbox to use without")
+                    st.warning("Start Anki with AnkiConnect installed or tick checkbox to use without. Adding cards directly to Anki is not possible without AnkiConnect.")
         else:
             if 'image_0' in st.session_state:
                 self.clear_data()
