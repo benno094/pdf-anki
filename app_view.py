@@ -63,7 +63,7 @@ class AppView:
                     if "decks" in st.session_state:
                         del st.session_state["decks"]
                     self.actions.get_decks()
-                st.markdown("**Note:** Note type ['Basic'](https://docs.ankiweb.net/getting-started.html#note-types) must exist for cards to be added.")
+                st.markdown("**Note:** Note type ['Basic'](https://docs.ankiweb.net/getting-started.html#note-types) must exist with the fields 'Front' and 'Back' for cards to be added.")
                 st.session_state["no_ankiconnect"] = False
             else:
                 st.checkbox(label = "Use without AnkiConnect", key = "no_ankiconnect")
