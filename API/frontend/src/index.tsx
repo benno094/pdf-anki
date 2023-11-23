@@ -10,7 +10,7 @@ async function addFlashcard(deck: string, front: string, back: string, tags: str
   try {
     const note = {
       deckName: deck,
-      modelName: 'Basic',
+      modelName: 'PDF-Anki-Note',
       fields: { Front: front, Back: back },
       options: { allowDuplicate: false },
       tags: [tags],
@@ -44,6 +44,47 @@ async function reqPerm() {
 
     const jsonResponse = await reqPermResponse.json();
     return jsonResponse.result.permission;
+  } catch (error) {
+    return false
+  }
+}
+
+async function checkModelExistence() {
+  try {
+    // Add the note to the deck
+    const checkModelExistence = await fetch('http://localhost:8765', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'modelNames',
+        version: 6,
+      }),
+    });
+
+    const jsonResponse = await checkModelExistence.json();
+    if (!jsonResponse.result.includes("PDF-Anki-Note")) {
+      const createModel = await fetch('http://localhost:8765', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: "createModel",
+        version: 6,
+        params: {
+          modelName: "PDF-Anki-Note",
+          inOrderFields: ["Front", "Back"],
+          isCloze: false,
+          cardTemplates: [
+            {
+              Name: "My Card 1",
+              Front: "{{Front}}",
+              Back: "{{FrontSide}}\n\n<hr id=answer>\n\n{{Back}}<br><br>\n\nTags: {{Tags}}",
+            },
+          ],
+        },
+      }),
+    });    
+
+    const jsonResponse = await createModel.json();
+    return jsonResponse.result;
+    }
   } catch (error) {
     return false
   }
@@ -85,29 +126,25 @@ async function onRender(event: Event): Promise<void> {
   let back = data.args["back"]
   let tags = data.args["tags"]
 
-  if (action == "reqPerm") {
-    try {    
-      const permission = await reqPerm();
-      Streamlit.setComponentValue(permission)
-    } catch (error) {
-      throw new Error
+  try {
+    switch (action) {
+      case "reqPerm":
+        // Initialization for checking if server reachable and model exists
+        await reqPerm();
+        const checkModel = await checkModelExistence();
+        Streamlit.setComponentValue(checkModel)
+        break;
+      case "addCard":
+        const success = await addFlashcard(deck, front, back, tags);
+        Streamlit.setComponentValue(`Worked!, ${success}`)
+        break;
+      case "getDecks":
+        const decks = await getDecks();
+        Streamlit.setComponentValue(decks)
+        break;
     }
-  } else if (action == "addCard") {    
-    try {    
-      const success = await addFlashcard(deck, front, back, tags);
-      Streamlit.setComponentValue(`Worked!, ${success}`)
-    } catch (error) {
-      throw new Error
-    }
-  } else if (action == "getDecks") {
-    try {    
-      const decks = await getDecks();
-      Streamlit.setComponentValue(decks)
-    } catch (error) {
-      throw new Error
-    }
-  } else {
-    throw new Error
+  } catch (error) {
+    Streamlit.setComponentValue("Error")
   }
 
   // We tell Streamlit to update our frameHeight after each render event, in

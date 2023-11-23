@@ -34,8 +34,19 @@ class Actions:
         if decks is not False and decks is not None:
             st.session_state['decks'] = decks
 
+    def get_lang(self, text):
+        completion = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": f"Return in one word the language of this text: {text}"}
+        ]
+        )
+
+        return completion.choices[0].message.content
+
     def send_to_gpt(self, page):
-        # TODO: Make function call like mentioned in openai docs
+        # TODO: Avoid error: No function_call in the response. Retrying...
         prompt = """
 You are receiving the text from one slide of a lecture. Use the following principles when making the flashcards:
 
@@ -44,7 +55,7 @@ You are receiving the text from one slide of a lecture. Use the following princi
 - If slide appears to only include a table or only a title call null_function.
 - Create Anki flashcards for an exam at university level.
 - Each card is standalone.
-- Short answers.
+- Short answer.
 - All information on slide needs to be used and only use the information that is on the slide.
 - Answers should be on the back and not included in the question.
 - Only add each piece of information once.
@@ -78,30 +89,37 @@ You are receiving the text from one slide of a lecture. Use the following princi
                         "content": new_chunk
                     }
                 ],
-                functions=[
+                tools=[
                     {
-                        "name": "flashcard_function",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {
-                                "flashcards": {
-                                    "type": "array",
-                                        "items": {
-                                            "type": "object",
-                                            "properties": {
-                                            "front": {"type": "string", "description": "Front side of the flashcard; a question"},
-                                            "back": {"type": "string", "description": "Back side of the flashcard; the answer"}
+                        "type": "function",
+                        "function": {
+                            "name": "flashcard_function",
+                            "description": "Create flashcards",
+                            "parameters": {
+                                "type": "object",
+                                "properties": {
+                                    "flashcards": {
+                                        "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                "front": {"type": "string", "description": "Front side of the flashcard; a question"},
+                                                "back": {"type": "string", "description": "Back side of the flashcard; the answer"}
+                                                }
                                             }
-                                        }
+                                    }
                                 }
                             }
-                        }  
+                        }
                     },
                     {
-                        "name": "null_function",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {}
+                        "type": "function",
+                        "function": {
+                            "name": "null_function",
+                            "parameters": {
+                                "type": "object",
+                                "properties": {}
+                            }
                         }
                     }
                 ],
@@ -109,27 +127,26 @@ You are receiving the text from one slide of a lecture. Use the following princi
                 temperature=0.9,
             )
             
-            # TODO: Make sure calls are not repeated
-            print(f"Call no. {str(retries + 1)} for slide {str(page + 1)}")                
-            if completion.choices[0].message.function_call:
+            print(f"Call no. {str(retries + 1)} for slide {str(page + 1)}")
+            if completion.choices[0].message.tool_calls is not None:
 
-                if completion.choices[0].message.function_call.name == "null_function": 
+                if completion.choices[0].message.tool_calls[0].function.name == "null_function" or completion.choices[0].message.content == "null_function": 
+                    print("Null_function")
                     st.session_state[f"{str(page)}_is_title"] = True
                     return None
 
             try:
-                response = completion.choices[0].message.function_call.arguments
-                if response:
-                    return response
-            except AttributeError:
-                print("Error: No function_call in the response. Retrying...")
+                if completion.choices[0].message.tool_calls:
+                    return completion.choices[0].message.tool_calls[0].function.arguments
+                
+            except Exception as e:
+                print("Error: ", e)
+                print("Returned response:\n", completion.choices[0].message.tool_calls)
                 retries += 1
                 continue
 
-            raise Exception("Error: No completion response returned.")
-
     def add_to_anki(self, cards, page):
-        deck = st.session_state['deck']
+        deck = st.session_state[f"{st.session_state['deck_key']}"]
         try:
             # TODO: Process response from API
             for card in cards:
