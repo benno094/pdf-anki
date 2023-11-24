@@ -35,6 +35,11 @@ class Actions:
             st.session_state['decks'] = decks
 
     def get_lang(self, text):
+        if st.session_state['API_KEY'] == "":
+            client.api_key = st.secrets['OPENAI_API_KEY']
+        else:
+            client.api_key = st.session_state['API_KEY']
+
         completion = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[
