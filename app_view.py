@@ -15,7 +15,7 @@ class AppView:
             if "api_perms" not in st.session_state:
                 self.actions.check_API()
         
-        col1, col2 = st.columns([4.3, 1], gap = "large")
+        col1, col2 = st.columns([0.78, 0.22], gap = "large")
         with col1:            
             st.markdown("[Buy Me A Coffee](https://www.buymeacoffee.com/benno094) to support development of the site or let us know what you think [here](mailto:pdf.to.anki@gmail.com).")
         with col2:
