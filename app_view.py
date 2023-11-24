@@ -64,7 +64,6 @@ class AppView:
                                     progress_bar = st.progress(0, text = "Extracting text from pages...")
                                     # Load the PDF and its previews and extract text for each page
                                     for i, page in enumerate(doc):
-                                        print("Extracting page #", i)
                                         progress_bar.progress(i / len(doc), text = "Extracting text from pages...")
                                         pix = page.get_pixmap(dpi=100)
                                         preview = pix.tobytes(output='jpg', jpg_quality=90)
