@@ -21,7 +21,6 @@ class AppView:
         with col2:
             st.markdown("**Disclaimer:** Use at your own risk.")
 
-        # TODO: Add small preview images to sidebar and maybe a slider to choose page range or selection of images
         with st.sidebar:
             st.markdown("Easily create and import flashcards directly into Anki with PDF-Anki -- powered by GPT3.5-turbo from OpenAI.")
             api_key = st.empty()
@@ -95,8 +94,9 @@ class AppView:
                 if st.session_state["gpt_lang"] in languages:
                     languages.remove(st.session_state["gpt_lang"])
                 languages.insert(0, st.session_state["gpt_lang"])
-            st.session_state["lang"] = st.selectbox("Returned language", languages, on_change=self.clear_data, key = "lang_box")
+            st.session_state["lang"] = st.selectbox("Returned language", languages, on_change=self.clear_flashcards, key = "lang_box")
             page_info = st.empty()
+            # TODO: Start generating flashcards once page number has been chosen
             col1, col2 = st.columns(2)
             with col1: 
                 if st.session_state['API_KEY'] == "":
@@ -135,8 +135,7 @@ class AppView:
                     st.session_state['decks'],
                     key = deck,
                     index = None,
-                    placeholder = 'Choose an Anki deck',
-                    label_visibility = "collapsed"
+                    placeholder = 'Anki deck'
                     )
                     if st.button("Refresh decks", key = "deck_refresh_btn"):
                         if "decks" in st.session_state:
@@ -278,6 +277,13 @@ class AppView:
                 continue
             del st.session_state[key]
 
+    def clear_flashcards(self):
+        for key in st.session_state.keys():
+            if key.startswith("flashcards") or key.startswith("fc_active") or key.startswith("status_label") or key.startswith("front") or key.startswith("back"):
+                del st.session_state[key] 
+            if key.endswith("is_title"):
+                del st.session_state[key]
+
     def disable_flashcard(self, page, num):
         st.session_state[f"fc_active_{page, num}"] = False
         st.session_state["flashcards_" + str(page) + "_to_add"] -= 1
@@ -325,3 +331,6 @@ class AppView:
             flashcards_clean = self.actions.cleanup_response(flashcards)
 
             st.session_state['flashcards_' + str(page)] = flashcards_clean
+        
+        if regen:
+            st.rerun()

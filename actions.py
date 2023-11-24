@@ -23,13 +23,11 @@ class Actions:
     # TODO: Extract pictures from PDF to add to flashcards.
     # TODO: Detect if page is mainly diagram and don't extract text.
     def check_API(self, key=None):
-        print("API checked")
         response = API(action="reqPerm", key=key)
         if response is not False and response is not None:
             st.session_state['api_perms'] = response
 
     def get_decks(self, key=None):
-        print("Decks checked")
         decks = API(action="getDecks", key=key)
         if decks is not False and decks is not None:
             st.session_state['decks'] = decks
