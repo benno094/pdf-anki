@@ -271,7 +271,7 @@ class AppView:
                                 st.session_state["flashcards_" + str(p) + "_tags"] = st.session_state["file_name"].replace(' ', '_').replace('.pdf', '') + "_page_" + str(p + 1)
                             st.text_input("Tag:", value = st.session_state["flashcards_" + str(p) + "_tags"], key = f"tag_{str(p)}")
                         if st.session_state.no_ankiconnect == True:
-                            st.info("You need AnkiConnect to be able to add cards")
+                            st.warning("You need AnkiConnect to be able to add cards")
 
     def clear_data(self):
         for key in st.session_state.keys():
