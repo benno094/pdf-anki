@@ -1,6 +1,7 @@
 # AppView.py
 import json
 import streamlit as st
+from streamlit_extras.badges import badge
 import fitz
 
 class AppView:
@@ -23,6 +24,7 @@ class AppView:
 
         with st.sidebar:
             st.markdown("Easily create and import flashcards directly into Anki with PDF-Anki -- powered by GPT3.5-turbo from OpenAI.")
+            badge(type="twitter", name="PDFToAnki")
             api_key = st.empty()
             if dev == True:
                 st.session_state['API_KEY'] = st.secrets.OPENAI_API_KEY
