@@ -1,4 +1,5 @@
 import { Streamlit, RenderData } from "streamlit-component-lib"
+import CryptoES from 'crypto-es';
 
 // TODO: Add tablet functionality using URL-schemes
 // Force sync after adding
@@ -24,7 +25,45 @@ async function addFlashcard(deck: string, front: string, back: string, tags: str
       }),
     });
 
-    await addNoteResponse.json();
+    const jsonResponse = await addNoteResponse.json();
+    return jsonResponse.result;
+  } catch (error) {
+    throw new Error('Error: Unable to reach the server');
+  }
+}
+
+// Adds note to a deck including image
+async function addFlashcardWithImage(deck: string, image: Uint8Array, front: string, back: string, tags: string) {
+  let binaryString = new TextDecoder().decode(image);
+  let date = Date.now();
+  let hash = CryptoES.SHA256(date.toString());
+  try {
+    const note = {
+      deckName: deck,
+      modelName: 'PDF-Anki-Note',
+      fields: { 
+        Front: front, 
+        Back: back ? back + "<br>" : back 
+      },
+      options: { allowDuplicate: false },
+      tags: [ tags ],
+      picture: [{
+        data: binaryString,
+        filename: "pdf-anki-" + hash + ".jpg",
+        fields: [ "Back" ]
+      }]
+    };
+    const addNoteResponse = await fetch('http://localhost:8765', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'addNote',
+        params: { note: note },
+        version: 6,
+      }),
+    });
+
+    const jsonResponse = await addNoteResponse.json();
+    return jsonResponse.result;
   } catch (error) {
     throw new Error('Error: Unable to reach the server');
   }
@@ -122,6 +161,7 @@ async function onRender(event: Event): Promise<void> {
   // Python script.
   let action = data.args["action"]
   let deck = data.args["deck"]
+  let image = data.args["image"]
   let front = data.args["front"]
   let back = data.args["back"]
   let tags = data.args["tags"]
@@ -136,7 +176,11 @@ async function onRender(event: Event): Promise<void> {
         break;
       case "addCard":
         const success = await addFlashcard(deck, front, back, tags);
-        Streamlit.setComponentValue(`Worked!, ${success}`)
+        Streamlit.setComponentValue(success)
+        break;
+      case "addCardWithImage":
+        const response = await addFlashcardWithImage(deck, image, front, back, tags);
+        Streamlit.setComponentValue(response)
         break;
       case "getDecks":
         const decks = await getDecks();

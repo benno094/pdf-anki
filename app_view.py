@@ -1,7 +1,11 @@
 # AppView.py
+import io
 import json
 import streamlit as st
 import fitz
+from streamlit_cropper import st_cropper
+from streamlit_extras.badges import badge
+from PIL import Image
 
 class AppView:
     def __init__(self, actions):
@@ -10,7 +14,6 @@ class AppView:
     def display(self):
         dev = False
 
-        # TODO: Only do one check and then create button to check for Anki. Add button to refresh decks.
         if "no_ankiconnect" in st.session_state and st.session_state.no_ankiconnect == False:
             if "api_perms" not in st.session_state:
                 self.actions.check_API()
@@ -23,6 +26,7 @@ class AppView:
 
         with st.sidebar:
             st.markdown("Easily create and import flashcards directly into Anki with PDF-Anki -- powered by GPT3.5-turbo from OpenAI.")
+            badge(type="twitter", name="PDFToAnki")
             api_key = st.empty()
             if dev == True:
                 st.session_state['API_KEY'] = st.secrets.OPENAI_API_KEY
@@ -47,7 +51,7 @@ class AppView:
                     st.session_state["file_uploader_key"] = "not_hidden"
 
                 if st.session_state["file_uploader_key"] == "not_hidden":
-                    # Remove file after extraction; create close file button to revive
+                    # TODO: Add warning for strange characters in file name
                     file = st.file_uploader("Choose a file", type=["pdf"], key = st.session_state["file_uploader_key"])
                     if file:
                         with file:
@@ -61,6 +65,8 @@ class AppView:
 
 
                                     progress_bar = st.progress(0, text = "Extracting text from pages...")
+                                    # TODO: Remove headers and footers; Don't send page if below a certain amount of chars
+                                    # TODO: Detect table
                                     # Load the PDF and its previews and extract text for each page
                                     for i, page in enumerate(doc):
                                         progress_bar.progress(i / len(doc), text = "Extracting text from pages...")
@@ -68,6 +74,7 @@ class AppView:
                                         preview = pix.tobytes(output='jpg', jpg_quality=90)
 
                                         st.session_state['image_' + str(i)] = preview
+                                        # TODO: Remove redundant text
                                         st.session_state['text_' + str(i)] = page.get_text(sort = True)
                                         if i == 0:
                                             st.session_state["gpt_lang"] = self.actions.get_lang(page.get_text(sort = True))
@@ -80,14 +87,6 @@ class AppView:
                 else:
                     st.session_state["hide_file_uploader"] = True
                     st.rerun()
-            else:
-                col1, col2 = st.columns([0.9, 0.1])
-                with col1:                    
-                    st.write(f"**Open file:**  {st.session_state['page_count']} pages - {st.session_state['file_name']}")
-                with col2:
-                    if st.button("X"):
-                        self.clear_data()
-                        st.rerun()
             
             languages = ['English', 'Bengali', 'French', 'German', 'Hindi', 'Urdu', 'Mandarin Chinese', 'Polish', 'Portuguese', 'Spanish', 'Arabic']
             if "gpt_lang" in st.session_state:
@@ -105,7 +104,7 @@ class AppView:
                     if "deck_key" in st.session_state:
                         num = st.number_input('Number of pages', value=st.session_state.num_pages, min_value=1, max_value = st.session_state['page_count'], format='%d', key = "num_pages")
                     else:
-                        num = st.number_input('Number of pages', value= st.session_state['page_count'] if st.session_state['page_count'] < 10 else 10, min_value=1, max_value = st.session_state['page_count'], format='%d', key = "num_pages")
+                        num = st.number_input('Number of pages', value = st.session_state['page_count'] if st.session_state['page_count'] < 10 else 10, min_value=1, max_value = st.session_state['page_count'], format='%d', key = "num_pages")
             with col2:
                 if "deck_key" in st.session_state:
                     start = st.number_input('Starting page', value=st.session_state.start_page, min_value=1, max_value = st.session_state['page_count'], format='%i', key = "start_page")
@@ -130,6 +129,7 @@ class AppView:
                     st.session_state["deck_key"] = "deck_0"
                 deck = st.session_state["deck_key"]
                 if "decks" in st.session_state:
+                    # TODO: No default selectbox from streamlit-extras
                     st.selectbox(
                     'Choose a deck',
                     st.session_state['decks'],
@@ -145,21 +145,31 @@ class AppView:
                             st.session_state["deck_count"] += 1
                             st.session_state["deck_key"] = f"deck_{st.session_state['deck_count']}"
                         self.actions.get_decks()
-                st.markdown("**Preview:**")
 
-                for i in range(0, st.session_state['page_count']):
-                    if i == st.session_state['page_count']:
-                        break
-                    st.image(st.session_state['image_' + str(i)], caption = f"Page {str(i+1)}")
+        if "hide_file_uploader" in st.session_state:
+            with st.sidebar:
+                col1, col2 = st.columns([0.9, 0.1])
+                with col1:
+                    # TODO: Detect strange characters and warn to protect Anki tags
+                    st.write(f"**File open:**  {st.session_state['file_name']} - {st.session_state['page_count']} pages")
+                with col2:
+                    if st.button("X"):
+                        self.clear_data()
+                        st.rerun()
 
-            # TODO: Strange behaviour when refreshing decks; use placeholder
-            if f"{deck}" in st.session_state and st.session_state[f"{deck}"] == None and st.session_state.start_page != None:
-                deck_info.info("Choose a deck to add the flashcards to")
-                st.stop()
+                if "start_page" in st.session_state and st.session_state.start_page != None:
+                    for i in range(0, st.session_state['page_count']):
+                        if i == st.session_state['page_count']:
+                            break
+                        st.image(st.session_state['image_' + str(i)], caption = f"Page {str(i+1)}")
 
-        # TODO: Cache all created flashcards
+                if st.session_state.start_page != None and f"{st.session_state['deck_key']}" in st.session_state and st.session_state[f"{st.session_state['deck_key']}"] == None:
+                    deck_info.info("Choose a deck to add the flashcards to")
+                    st.stop()
+
         if st.session_state["start_page"] == None:
             st.stop()
+        
         # Loop through the pages
         for i in range(start - 1, start + num - 1):
             if i == st.session_state['page_count']:
@@ -171,27 +181,61 @@ class AppView:
 
             # Create an expander for each image and its corresponding flashcards
             # If cards have been added collapse
+            # TODO: Clear expanders so window starts back at the top
             # TODO: Change variable when manually collapsed
-            if "flashcards_" + str(i) + "_added" in st.session_state:
-                coll = False
-            else:
-                coll = True
 
             if f"status_label_{i}" in st.session_state:
                 label = f" - {st.session_state[f'status_label_{i}']}"
+                exp = False
             else:
                 label = ""
+                exp = True
 
-            with st.expander(f"Page {i + 1}/{st.session_state.get('page_count', '')}{label}", expanded=coll):                    
+            with st.expander(f"Page {i + 1}/{st.session_state.get('page_count', '')}{label}", expanded=exp):
                 if st.session_state['API_KEY'] == "":
                     st.warning("Enter API key to generate more than two flashcards")
                 col1, col2 = st.columns([0.6, 0.4])
                 # Display the image in the first column
                 with col1:
-                    st.image(st.session_state['image_' + str(i)])
+                    tabs = st.tabs(["Preview", "Text"])
+                    with tabs[0]:
+                        if "add_image" in st.session_state and st.session_state["add_image"][0] == i:
+                            page = st.session_state["add_image"][0]
+                            card = st.session_state["add_image"][1]
+                            image_bytes = st.session_state['image_' + str(i)]
+                            image_io = io.BytesIO(image_bytes)
+                            pil_image = Image.open(image_io)
+                            cropped_img = st_cropper(pil_image, realtime_update = True, box_color = "#000000", aspect_ratio = None, key = f"crop_box_{i}", return_type = "both")
+                            if st.session_state["add_image"][1] == card:
+                                flash_no = card + 1
+                            st.info(f"Choose image for flashcard #{flash_no}. Use shift while dragging to adjust aspect ratio.")
+
+                            if cropped_img[1]["left"] != 200 and cropped_img[1]["top"] != 150 and cropped_img[1]["width"] != 600 and cropped_img[1]["height"] != 450:
+                                st.session_state[f"img_{page, card}"] = cropped_img[0]
+                        else:
+                            st.image(st.session_state['image_' + str(i)])
+
+                    with tabs[1]:
+                        # TODO: Remove redundant code -> make function to display image
+                        if "add_image" in st.session_state and st.session_state["add_image"][0] == i:
+                            st.warning('To view text again click "Finish adding image" button')
+                            page = st.session_state["add_image"][0]
+                            card = st.session_state["add_image"][1]
+                            image_bytes = st.session_state['image_' + str(i)]
+                            image_io = io.BytesIO(image_bytes)
+                            pil_image = Image.open(image_io)
+                            cropped_img = st_cropper(pil_image, realtime_update = True, box_color = "#000000", aspect_ratio = None, key = f"crop_box_text_{i}", return_type = "both")
+                            if st.session_state["add_image"][1] == card:
+                                flash_no = card + 1
+                            st.info(f"Choose image for flashcard #{flash_no}. Use shift while dragging to adjust aspect ratio.")
+
+                            if cropped_img[1]["left"] != 200 and cropped_img[1]["top"] != 150 and cropped_img[1]["width"] != 600 and cropped_img[1]["height"] != 450:
+                                st.session_state[f"img_{page, card}"] = cropped_img[0]
+                        else:
+                            st.text(st.session_state['text_' + str(i)])
 
                 # If flashcards exist for the page, show them and show 'Add to Anki' button
-                # Otherwise, show 'generate flashcards' button              
+                # Otherwise, show 'generate flashcards' button
                 if f"{i}_is_title" in st.session_state:
                     st.session_state['flashcards_' + str(i)] = "dummy cards"
                 with col2:
@@ -211,11 +255,17 @@ class AppView:
                                     flashcards = flashcards[:2]
                             length = len(flashcards)
                         else:
-                            del st.session_state['flashcards_' + str(i)]
                             if f"{i}_is_title" not in st.session_state:
-                                self.generate_flashcards(i, regen = True)
-                            if st.button("Regenerate flashcards", key=f"reg_{i}"):
-                                self.generate_flashcards(i, regen = True)
+                                st.info("Response was not usable. Please regenerate cards, if needed.")
+                            #     self.generate_flashcards(i, regen = True)
+                            col1, col2, col3 = st.columns([0.4, 0.4, 0.2])
+                            with col1:
+                                if st.button("Regenerate flashcards", key=f"reg_{i}"):
+                                    self.generate_flashcards(i, regen = True)
+                            with col2:
+                                st.button("New flashcard", key=f"add_{p, i}", on_click=self.add_flashcard, args=[p])
+                            with col3:
+                                pass
                             continue
                         # Create a tab for each flashcard
                         tabs = st.tabs([f"#{i+1}" for i in range(length)])
@@ -223,7 +273,6 @@ class AppView:
                             st.session_state["flashcards_" + str(i) + "_count"] = length
                             st.session_state["flashcards_" + str(i) + "_to_add"] = length
 
-                        # TODO: Deal with cards that are returned with "no information"
                         for i, flashcard in enumerate(flashcards):
                             with tabs[i]:
                                 # TODO: Add option to modify a flashcard using GPT with a individual prompt/button
@@ -236,23 +285,78 @@ class AppView:
                                         st.text_input(f"Front", value=flashcard["front"], key=f"front_{p, i}", disabled=True)
                                         st.text_area(f"Back", value=flashcard["back"], key=f"back_{p, i}", disabled=True)
 
-                                        st.button("Enable flashcard", key=f"del_{p, i}", on_click=self.enable_flashcard, args=[p, i])
+                                        col1, col2, col3 = st.columns([0.33, 0.3, 0.37])
+                                        with col1:
+                                            st.button("Enable flashcard", key=f"del_{p, i}", on_click=self.enable_flashcard, args=[p, i])
+                                        with col2:
+                                            st.button("New flashcard", key=f"add_{p, i}", on_click=self.add_flashcard, args=[p])
+                                        with col3:
+                                            pass
                                     else:                                           
                                         st.session_state[f"fc_active_{p, i}"] = True
+                                        st.write("[Markdown](https://daringfireball.net/projects/markdown/basics) supported in front and back fields")
                                         st.text_input(f"Front", value=flashcard["front"], key=f"front_{p, i}", disabled=False)
                                         st.text_area(f"Back", value=flashcard["back"], key=f"back_{p, i}", disabled=False)
 
-                                        st.button("Disable flashcard", key=f"del_{p, i}", on_click=self.disable_flashcard, args=[p, i])
+                                        col1, col2, col3 = st.columns([0.33, 0.3, 0.37])
+                                        with col1:
+                                            st.button("Disable flashcard", key=f"del_{p, i}", on_click=self.disable_flashcard, args=[p, i])
+                                        with col2:
+                                            st.button("New flashcard", key=f"add_{p, i}", on_click=self.add_flashcard, args=[p])
+                                        with col3:
+                                            pass
                                 elif f"fc_active_{p, i}" in st.session_state and st.session_state[f"fc_active_{p, i}"] == False:                                        
+                                    st.write("[Markdown](https://daringfireball.net/projects/markdown/basics) supported in front and back fields")
                                     st.text_input(f"Front", value=flashcard["front"], key=f"front_{p, i}", disabled=True)
                                     st.text_area(f"Back", value=flashcard["back"], key=f"back_{p, i}", disabled=True)
 
-                                    st.button("Enable flashcard", key=f"del_{p, i}", on_click=self.enable_flashcard, args=[p, i])
+                                    col1, col2, col3 = st.columns([0.33, 0.3, 0.37])
+                                    with col1:
+                                        st.button("Enable flashcard", key=f"del_{p, i}", on_click=self.enable_flashcard, args=[p, i])
+                                    with col2:
+                                        st.button("New flashcard", key=f"add_{p, i}", on_click=self.add_flashcard, args=[p])
+                                    with col3:
+                                        pass
                                 else:                                    
+                                    st.write("[Markdown](https://daringfireball.net/projects/markdown/basics) supported in front and back fields")
                                     st.text_input(f"Front", value=flashcard["front"], key=f"front_{p, i}", disabled=False)
                                     st.text_area(f"Back", value=flashcard["back"], key=f"back_{p, i}", disabled=False)
 
-                                    st.button("Disable flashcard", key=f"del_{p, i}", on_click=self.disable_flashcard, args=[p, i])
+                                    col1, col2, col3 = st.columns([0.33, 0.3, 0.37])
+                                    with col1:
+                                        st.button("Disable flashcard", key=f"del_{p, i}", on_click=self.disable_flashcard, args=[p, i])
+                                    with col2:
+                                        st.button("New flashcard", key=f"add_{p, i}", on_click=self.add_flashcard, args=[p])
+                                    with col3:
+                                        pass
+                                
+                                # TODO: Shift location of image relative to buttons?
+                                if f"img_{p, i}" in st.session_state:
+                                    col1, col2 = st.columns([0.9, 0.1])
+                                    with col1:                                        
+                                        st.image(st.session_state[f"img_{p, i}"])
+                                    with col2:
+                                        if "add_image" not in st.session_state or "add_image" in st.session_state and st.session_state["add_image"][0] != p or "add_image" in st.session_state and st.session_state["add_image"][1] != i:
+                                            if st.button("X", key = f"del_image_btn_{p, i}"):
+                                                del st.session_state[f"img_{p, i}"]
+                                                st.rerun()
+                                    if "add_image" in st.session_state and st.session_state["add_image"][0] == p and st.session_state["add_image"][1] == i:
+                                        if st.button("Finish adding image", key = f"finish_add_image_btn_{p, i}"):
+                                            del st.session_state["add_image"]
+                                            st.rerun()
+                                else:
+                                    if "add_image" not in st.session_state:
+                                        if st.button("Add image", key = f"add_image_btn_{p, i}"):
+                                            st.session_state[f"add_image"] = [p, i]
+                                            st.rerun()
+                                    elif "add_image" in st.session_state and st.session_state["add_image"][0] != p or st.session_state["add_image"][1] != i:
+                                        if st.button("Add image", key = f"add_image_btn_{p, i}"):
+                                            st.session_state[f"add_image"] = [p, i]
+                                            st.rerun()
+                                    else:
+                                        if st.button("Finish adding image", key = f"finish_add_image_btn_{p, i}"):
+                                            del st.session_state["add_image"]
+                                            st.rerun()
                         col1, col2 = st.columns([0.4,1])
                         with col1:
                             # Blank out 'add to Anki' button if no cards
@@ -263,13 +367,17 @@ class AppView:
                             if st.session_state.no_ankiconnect == True:
                                 no_cards = True
                             if "flashcards_" + str(p) + "_added" not in st.session_state:
-                                st.button(f"Add {st.session_state['flashcards_' + str(p) + '_to_add']} flashcard(s) to Anki", key=f"add_{str(p)}", on_click=self.prepare_and_add_flashcards_to_anki, args=[p], disabled=no_cards)                                    
+                                st.button(f"Add {st.session_state['flashcards_' + str(p) + '_to_add']} flashcard(s) to Anki", key=f"add_{str(p)}", on_click=self.prepare_and_add_flashcards_to_anki, args=[p], disabled=no_cards)
+                            else:
+                                st.button(f"Add {st.session_state['flashcards_' + str(p) + '_to_add']} flashcard(s) to Anki again", key=f"add_{str(p)}", on_click=self.prepare_and_add_flashcards_to_anki, args=[p], disabled=no_cards)
                         with col2:
                             if "flashcards_" + str(p) + "_tags" not in st.session_state:
                                 st.session_state["flashcards_" + str(p) + "_tags"] = st.session_state["file_name"].replace(' ', '_').replace('.pdf', '') + "_page_" + str(p + 1)
                             st.text_input("Tag:", value = st.session_state["flashcards_" + str(p) + "_tags"], key = f"tag_{str(p)}")
+                        if "flashcards_" + str(p) + "_added" in st.session_state:
+                            st.info('Already added cards will not be overwritten when adding again. Change "Front" text to add new card(s). Original card(s) will remain in Anki.')
                         if st.session_state.no_ankiconnect == True:
-                            st.warning("You need AnkiConnect to be able to add cards")
+                            st.warning("You need AnkiConnect to be able to add cards")                    
 
     def clear_data(self):
         for key in st.session_state.keys():
@@ -292,6 +400,21 @@ class AppView:
         st.session_state[f"fc_active_{page, num}"] = True        
         st.session_state["flashcards_" + str(page) + "_to_add"] += 1
 
+    def add_flashcard(self, page):
+        if f"{page}_is_title" in st.session_state:
+            del st.session_state[f"{page}_is_title"]
+        if "flashcards_" + str(page) + "_count" in st.session_state:
+            i = st.session_state["flashcards_" + str(page) + "_count"]
+        else:
+            i = 0
+            st.session_state["flashcards_" + str(page) + "_count"] = 0
+            st.session_state["flashcards_" + str(page) + "_to_add"] = 0
+            st.session_state['flashcards_' + str(page)] = []
+        st.session_state["flashcards_" + str(page) + "_count"] += 1
+        st.session_state[f"fc_active_{page, i}"] = True
+        st.session_state["flashcards_" + str(page) + "_to_add"] += 1
+        st.session_state['flashcards_' + str(page)].append({'front': '', 'back': ''})
+
     def prepare_and_add_flashcards_to_anki(self, page):
         prepared_flashcards = []
 
@@ -303,15 +426,10 @@ class AppView:
                 prepared_flashcards.append({"front": front_text, "back": back_text})
 
         try:
-            # Total cards to add for current page
-            st.session_state["flashcards_to_add"] = st.session_state["flashcards_" + str(page) + "_to_add"]
             success = self.actions.add_to_anki(prepared_flashcards, page)
             if success:
                 # Add state for flashcards added
                 st.session_state["flashcards_" + str(page) + "_added"] = True
-                st.session_state[f"fc_active_{page, i}"] = True
-                st.session_state["flashcards_" + str(page) + "_count"] = 0
-                st.session_state["flashcards_" + str(page) + "_to_add"] = 0
                 st.session_state[f"status_label_{page}"] = "Added!"
             else:
                 raise Exception("Error 2:", success)
@@ -324,7 +442,7 @@ class AppView:
         if regen:
             if f"{page}_is_title" in st.session_state:
                 del st.session_state[f"{page}_is_title"]
-        # TODO: Receive in chunks so user knows something is happening
+        # TODO: Receive in chunks so user knows something is happening; bundle pages together?
         flashcards = self.actions.send_to_gpt(page)
 
         if flashcards:

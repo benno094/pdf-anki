@@ -121,6 +121,9 @@ celerybeat.pid
 # streamlit secrets
 secrets.toml
 
+# Added streamlit components
+streamlit-drawable-canvas/
+
 # Environments
 .env
 .venv
