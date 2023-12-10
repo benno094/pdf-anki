@@ -2,6 +2,7 @@
 import io
 import json
 import streamlit as st
+from streamlit_extras.badges import badge
 import fitz
 from streamlit_cropper import st_cropper
 from streamlit_extras.badges import badge

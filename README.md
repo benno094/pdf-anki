@@ -25,13 +25,19 @@ Note: App adds a custom note type so that there is no issue with note's name and
 ### To do:
 
 - Add option to log in to save preferences
-- Include images
 - Check if dependencies are all really needed
-- Option to add card
 - Allow user to change prompt options
-- Add option to add pure text
 
 ### Changelog:
+
+0.7 beta
+
+- Can now add one image per flashcard
+- Can view text extracted from flashcard
+- Added option to add new flashcard
+- Modified handling of bad cards returned by GPT
+- Flashcards now support Markdown and retain formatting provided by GPT
+- Cards can now be readded
 
 0.6 alpha
 
