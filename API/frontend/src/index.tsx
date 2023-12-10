@@ -41,10 +41,7 @@ async function addFlashcardWithImage(deck: string, image: Uint8Array, front: str
     const note = {
       deckName: deck,
       modelName: 'PDF-Anki-Note',
-      fields: { 
-        Front: front, 
-        Back: back ? back + "<br>" : back 
-      },
+      fields: { Front: front, Back: back },
       options: { allowDuplicate: false },
       tags: [ tags ],
       picture: [{
