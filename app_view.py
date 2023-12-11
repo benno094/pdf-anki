@@ -15,10 +15,11 @@ class AppView:
     def display(self):
         dev = False
 
+        # TODO: Check if GPT-4 is available and if openai account has enough credits
         if "no_ankiconnect" in st.session_state and st.session_state.no_ankiconnect == False:
             if "api_perms" not in st.session_state:
                 self.actions.check_API()
-        
+
         col1, col2 = st.columns([0.78, 0.22], gap = "large")
         with col1:            
             st.markdown("[Buy Me A Coffee](https://www.buymeacoffee.com/benno094) to support development of the site or let us know what you think [here](mailto:pdf.to.anki@gmail.com).")
@@ -211,8 +212,7 @@ class AppView:
                                 flash_no = card + 1
                             st.info(f"Choose image for flashcard #{flash_no}. Use shift while dragging to adjust aspect ratio.")
 
-                            if cropped_img[1]["left"] != 200 and cropped_img[1]["top"] != 150 and cropped_img[1]["width"] != 600 and cropped_img[1]["height"] != 450:
-                                st.session_state[f"img_{page, card}"] = cropped_img[0]
+                            st.session_state[f"img_{page, card}"] = cropped_img[0]
                         else:
                             st.image(st.session_state['image_' + str(i)])
 
@@ -230,8 +230,7 @@ class AppView:
                                 flash_no = card + 1
                             st.info(f"Choose image for flashcard #{flash_no}. Use shift while dragging to adjust aspect ratio.")
 
-                            if cropped_img[1]["left"] != 200 and cropped_img[1]["top"] != 150 and cropped_img[1]["width"] != 600 and cropped_img[1]["height"] != 450:
-                                st.session_state[f"img_{page, card}"] = cropped_img[0]
+                            st.session_state[f"img_{page, card}"] = cropped_img[0]
                         else:
                             st.text(st.session_state['text_' + str(i)])
 
