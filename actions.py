@@ -191,7 +191,7 @@ You are receiving the text from one slide of a lecture. Use the following princi
                 json_strs = [text + '}' if not text.endswith('}') else text for text in json_strs]
                 json_strs = ['{' + text if not text.startswith('{') else text for text in json_strs]
 
-                text = json_strs[1]
+                text = json_strs[0]
 
             # Escape inner square brackets
             response_text_escaped = re.sub(r'(?<=\[)[^\[\]]*(?=\])', self.escape_inner_brackets, text)
