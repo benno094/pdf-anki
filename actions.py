@@ -185,7 +185,7 @@ You are receiving the text from one slide of a lecture. Use the following princi
             if text.startswith(prefix):
                 text = text[len(prefix):-1]  # remove the prefix and the closing parenthesis
             
-                json_strs = text.strip().split('\n})\n{\n')
+                json_strs = text.strip().split('\n})\n')
                 json_strs = [text + '}' if not text.endswith('}') else text for text in json_strs]
                 json_strs = ['{' + text if not text.startswith('{') else text for text in json_strs]
 
