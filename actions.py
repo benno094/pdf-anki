@@ -186,6 +186,12 @@ You are receiving the text from one slide of a lecture. Use the following princi
             prefix = 'flashcard_function('
             if text.startswith(prefix):
                 text = text[len(prefix):-1]  # remove the prefix and the closing parenthesis
+            
+                json_strs = text.strip().split('\n})\n{\n')
+                json_strs = [text + '}' if not text.endswith('}') else text for text in json_strs]
+                json_strs = ['{' + text if not text.startswith('{') else text for text in json_strs]
+
+                text = json_strs[1]
 
             # Escape inner square brackets
             response_text_escaped = re.sub(r'(?<=\[)[^\[\]]*(?=\])', self.escape_inner_brackets, text)
