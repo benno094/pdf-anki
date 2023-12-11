@@ -57,9 +57,6 @@ class Actions:
         prompt = """
 You are receiving the text from one slide of a lecture. Use the following principles when making the flashcards:
 
-- Check if the slide contains specific keywords or phrases related to subject-specific information and call flashcard_function.
-- If slide is just a table of contents, learning objectives or a title slide call null_function.
-- If slide appears to only include a table or only a title call null_function.
 - Create Anki flashcards for an exam at university level.
 - Each card is standalone.
 - Short answer.
@@ -123,6 +120,7 @@ You are receiving the text from one slide of a lecture. Use the following princi
                         "type": "function",
                         "function": {
                             "name": "null_function",
+                            "description": "Function to use if page is just a table of contents, learning objectives or a title slide",
                             "parameters": {
                                 "type": "object",
                                 "properties": {}
