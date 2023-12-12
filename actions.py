@@ -163,8 +163,8 @@ You are receiving the text from one slide of a lecture. Use the following princi
             # TODO: Process response from API
             for index, card in enumerate(cards):
                 no = true_list[index]
-                front = markdown.markdown(card['front'])
-                back = markdown.markdown(card['back'])
+                front = markdown.markdown(card['front'], extensions=['nl2br'])
+                back = markdown.markdown(card['back'], extensions=['nl2br'])
                 tags = st.session_state["flashcards_" + str(page) + "_tags"]
                 if f"img_{page, no}" in st.session_state:
                     image_bytes = BytesIO()
