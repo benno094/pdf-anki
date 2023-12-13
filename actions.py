@@ -161,6 +161,7 @@ You are receiving the text from one slide of a lecture. Use the following princi
                 true_list.append((i))
         try:
             # TODO: Process response from API
+            # TODO: Turn cards into "span" so they don't become paragraphs: https://python-markdown.github.io/extensions/md_in_html/
             for index, card in enumerate(cards):
                 no = true_list[index]
                 front = markdown.markdown(card['front'], extensions=['nl2br'])
