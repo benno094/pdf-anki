@@ -32,7 +32,7 @@ class AppView:
             api_key = st.empty()
             if dev == True:
                 st.session_state['API_KEY'] = st.secrets.OPENAI_API_KEY
-            elif "email" in st.experimental_user and "EMAIL" in st.secrets and st.experimental_user['email'] == st.secrets.EMAIL:
+            elif "email" in st.experimental_user and "EMAIL" in st.secrets and st.experimental_user.email == st.secrets.EMAIL:
                 st.session_state['API_KEY'] = st.secrets.OPENAI_API_KEY
             else:
                 st.session_state['API_KEY'] = api_key.text_input("Enter OpenAI API key (Get one [here](https://platform.openai.com/account/api-keys))", type = "password")
@@ -219,22 +219,8 @@ class AppView:
                             st.image(st.session_state['image_' + str(i)])
 
                     with tabs[1]:
-                        # TODO: Remove redundant code -> make function to display image
-                        if "add_image" in st.session_state and st.session_state["add_image"][0] == i:
-                            st.warning('To view text again click "Finish adding image" button')
-                            page = st.session_state["add_image"][0]
-                            card = st.session_state["add_image"][1]
-                            image_bytes = st.session_state['image_' + str(i)]
-                            image_io = io.BytesIO(image_bytes)
-                            pil_image = Image.open(image_io)
-                            cropped_img = st_cropper(pil_image, realtime_update = True, box_color = "#000000", aspect_ratio = None, key = f"crop_box_text_{i}", return_type = "both")
-                            if st.session_state["add_image"][1] == card:
-                                flash_no = card + 1
-                            st.info(f"Choose image for flashcard #{flash_no}. Use shift while dragging to adjust aspect ratio.")
-
-                            st.session_state[f"img_{page, card}"] = cropped_img[0]
-                        else:
-                            st.text(st.session_state['text_' + str(i)])
+                        st.text(st.session_state['text_' + str(i)])
+                        st.warning("Don't click add image while on text preview")
 
                 # If flashcards exist for the page, show them and show 'Add to Anki' button
                 # Otherwise, show 'generate flashcards' button
