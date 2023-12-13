@@ -32,7 +32,7 @@ class AppView:
             api_key = st.empty()
             if dev == True:
                 st.session_state['API_KEY'] = st.secrets.OPENAI_API_KEY
-            elif "email" in st.experimental_user and "EMAIL" in st.session_state and st.experimental_user['email'] == st.secrets.EMAIL:
+            elif "email" in st.experimental_user and "EMAIL" in st.secrets and st.experimental_user['email'] == st.secrets.EMAIL:
                 st.session_state['API_KEY'] = st.secrets.OPENAI_API_KEY
             else:
                 st.session_state['API_KEY'] = api_key.text_input("Enter OpenAI API key (Get one [here](https://platform.openai.com/account/api-keys))", type = "password")
