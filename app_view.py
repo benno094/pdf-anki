@@ -45,7 +45,7 @@ class AppView:
                 st.checkbox(label = "Use without AnkiConnect", key = "no_ankiconnect")
                 if st.session_state["no_ankiconnect"] == False:
                     self.actions.get_decks()
-                    st.markdown("**To add flashcards to Anki:**\n- Anki needs to be running with AnkiConnect installed (Addon #: 2055492159)\n- A popup from Anki will appear $\\rightarrow$ choose yes.\n\n **Note:** If unable to connect, disable ad/tracker-blocker for the site.")
+                    st.markdown("**To add flashcards to Anki:**\n- Anki needs to be running with AnkiConnect installed (Addon #: 2055492159)\n- A popup from Anki will appear $\\rightarrow$ choose yes.\n\n **Note:**\n - If unable to connect, disable ad/tracker-blocker for the site.\n - Close any other open windows/programs.")
                     st.stop()
                 else:
                     pass
@@ -185,7 +185,7 @@ class AppView:
 
             # Create an expander for each image and its corresponding flashcards
             # If cards have been added collapse
-            # TODO: Clear expanders so window starts back at the top
+            # TODO: Clear expanders so window starts back at the top, possibly using multi page
             # TODO: Change variable when manually collapsed
 
             if f"status_label_{i}" in st.session_state:
@@ -219,7 +219,7 @@ class AppView:
                             st.image(st.session_state['image_' + str(i)])
 
                     with tabs[1]:
-                        st.warning("Don't click add image while on text preview")
+                        st.warning('''Don't click "add image" while on text preview''')
                         st.text(st.session_state['text_' + str(i)])
 
                 # If flashcards exist for the page, show them and show 'Add to Anki' button
