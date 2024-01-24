@@ -417,6 +417,7 @@ class AppView:
             success = self.actions.add_to_anki(prepared_flashcards, page)
             if success:
                 # Add state for flashcards added
+                # TODO: fix flashcards reverting to GPT response once added
                 st.session_state["flashcards_" + str(page) + "_added"] = True
                 st.session_state[f"status_label_{page}"] = "Added!"
             else:
