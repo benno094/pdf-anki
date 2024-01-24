@@ -27,7 +27,7 @@ class AppView:
             st.markdown("**Disclaimer:** Use at your own risk.")
 
         with st.sidebar:
-            st.markdown("Easily create and import flashcards directly into Anki with PDF-Anki -- powered by GPT3.5-turbo from OpenAI.")
+            st.markdown("Easily create and import flashcards directly into Anki with PDF-Anki -- powered by GPT3.5-turbo from OpenAI.\n Alternate link: [pdftoanki.xyz](https://pdftoanki.xyz)")
             badge(type="twitter", name="PDFToAnki")
             api_key = st.empty()
             if dev == True:
