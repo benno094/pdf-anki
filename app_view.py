@@ -45,7 +45,7 @@ class AppView:
                 st.checkbox(label = "Use without AnkiConnect", key = "no_ankiconnect")
                 if st.session_state["no_ankiconnect"] == False:
                     self.actions.get_decks()
-                    st.markdown("**To add flashcards to Anki:**\n- Anki needs to be running with AnkiConnect installed (Addon #: 2055492159)\n- A popup from Anki will appear $\\rightarrow$ choose yes.\n\n **Note:**\n - If unable to connect, disable ad/tracker-blocker for the site.\n - Close any other open windows/programs.")
+                    st.markdown("**To add flashcards to Anki:**\n- Anki needs to be running with AnkiConnect installed (Addon #: 2055492159)\n- A popup from Anki will appear $\\rightarrow$ choose yes.\n\n **Note:**\n - If unable to connect, disable ad/tracker-blocker for the site.\n - Close any other open windows/programs.\n\n If pop-up still doesn't appear -> uninstall Anki Qt6 and install the Qt5 version.")
                     st.stop()
                 else:
                     pass
