@@ -3,6 +3,7 @@ import base64
 import json
 import os
 from io import BytesIO
+import openai
 from openai import OpenAI
 import re
 import streamlit as st
@@ -41,13 +42,22 @@ class Actions:
         else:
             client.api_key = st.session_state['API_KEY']
 
-        completion = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": f"Return in one word the language of this text: {text}"}
-        ]
-        )
+        try:
+            completion = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": f"Return in one word the language of this text: {text}"}
+            ]
+            )
+        except openai.APIError as e:
+            st.warning(f"OpenAI API returned an API Error:\n\n{str(e)}\n\n**Refresh the page and try again**")
+            st.session_state["openai_error"] = e
+            st.stop()
+        except openai.APIConnectionError as e:
+            st.warning(f"Failed to connect to OpenAI API:\n\n{str(e)}\n\n**Refresh the page and try again**")
+            st.session_state["openai_error"] = e
+            st.stop()
 
         return completion.choices[0].message.content
 

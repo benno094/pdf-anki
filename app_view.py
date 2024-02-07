@@ -30,6 +30,10 @@ class AppView:
             st.markdown("Easily create and import flashcards directly into Anki with PDF-Anki -- powered by GPT3.5-turbo from OpenAI.\n Alternate link: [pdftoanki.xyz](https://pdftoanki.xyz)")
             badge(type="twitter", name="PDFToAnki")
             api_key = st.empty()
+            if "openai_error" in st.session_state:
+                st.warning(f"**Refresh the page and reenter API key, the following error still persists:**\n\n {st.session_state['openai_error']}")
+                st.stop()
+                    
             if dev == True:
                 st.session_state['API_KEY'] = st.secrets.OPENAI_API_KEY
             elif "email" in st.experimental_user and "EMAIL" in st.secrets and st.experimental_user.email == st.secrets.EMAIL:
@@ -186,7 +190,6 @@ class AppView:
             # Create an expander for each image and its corresponding flashcards
             # If cards have been added collapse
             # TODO: Clear expanders so window starts back at the top, possibly using multi page
-            # TODO: Change variable when manually collapsed
 
             if f"status_label_{i}" in st.session_state:
                 label = f" - {st.session_state[f'status_label_{i}']}"
@@ -358,6 +361,10 @@ class AppView:
                                 st.button(f"Add {st.session_state['flashcards_' + str(p) + '_to_add']} flashcard(s) to Anki", key=f"add_{str(p)}", on_click=self.prepare_and_add_flashcards_to_anki, args=[p], disabled=no_cards)
                             else:
                                 st.button(f"Add {st.session_state['flashcards_' + str(p) + '_to_add']} flashcard(s) to Anki again", key=f"add_{str(p)}", on_click=self.prepare_and_add_flashcards_to_anki, args=[p], disabled=no_cards)
+                            if f'status_label_{str(p)}' not in st.session_state:
+                                if st.button("Hide page", key=f"hide_{str(p)}"):
+                                    st.session_state[f'status_label_{str(p)}'] = "Hidden"
+                                    st.rerun()
                         with col2:
                             if "flashcards_" + str(p) + "_tags" not in st.session_state:
                                 st.session_state["flashcards_" + str(p) + "_tags"] = st.session_state["file_name"].replace(' ', '_').replace('.pdf', '') + "_page_" + str(p + 1)

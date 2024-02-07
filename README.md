@@ -27,8 +27,14 @@ Note: App adds a custom note type so that there is no issue with note's name and
 - Add option to log in to save preferences
 - Check if dependencies are all really needed
 - Allow user to change prompt options
+- Error handling of api errors
 
 ### Changelog:
+
+0.8 beta
+
+- Errors returned by openai are displayed
+- Added button to hide page
 
 0.7 beta
 
