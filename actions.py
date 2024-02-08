@@ -58,6 +58,10 @@ class Actions:
             st.warning(f"Failed to connect to OpenAI API:\n\n{str(e)}\n\n**Refresh the page and try again**")
             st.session_state["openai_error"] = e
             st.stop()
+        except openai.RateLimitError as e:
+            st.warning(f"OpenAI API request exceeded rate limit::\n\n{str(e)}\n\n**Fix the problem, refresh the page and try again**")
+            st.session_state["openai_error"] = e
+            st.stop()
 
         return completion.choices[0].message.content
 

@@ -40,6 +40,7 @@ class AppView:
                 st.session_state['API_KEY'] = st.secrets.OPENAI_API_KEY
             else:
                 st.session_state['API_KEY'] = api_key.text_input("Enter OpenAI API key (Get one [here](https://platform.openai.com/account/api-keys))", type = "password")
+                st.info("Make sure you add a payment method to your OpenAI account as the free tier does not suffice.")
             if st.session_state["API_KEY"] != "":
                 api_key.empty()
 
@@ -253,6 +254,10 @@ class AppView:
                             with col1:
                                 if st.button("Regenerate flashcards", key=f"reg_{i}"):
                                     self.generate_flashcards(i, regen = True)
+                                if f'status_label_{str(p)}' not in st.session_state:
+                                    if st.button("Hide page", key=f"hide_{str(p)}"):
+                                        st.session_state[f'status_label_{str(p)}'] = "Hidden"
+                                        st.rerun()
                             with col2:
                                 st.button("New flashcard", key=f"add_{p, i}", on_click=self.add_flashcard, args=[p])
                             with col3:
