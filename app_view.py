@@ -30,6 +30,7 @@ class AppView:
             st.markdown("Easily create and import flashcards directly into Anki with PDF-Anki -- powered by GPT3.5-turbo from OpenAI.\n Alternate link: [pdftoanki.xyz](https://pdftoanki.xyz)")
             badge(type="twitter", name="PDFToAnki")
             api_key = st.empty()
+            api_key_text = st.empty()
             if "openai_error" in st.session_state:
                 st.warning(f"**Refresh the page and reenter API key, the following error still persists:**\n\n {st.session_state['openai_error']}")
                 st.stop()
@@ -40,9 +41,16 @@ class AppView:
                 st.session_state['API_KEY'] = st.secrets.OPENAI_API_KEY
             else:
                 st.session_state['API_KEY'] = api_key.text_input("Enter OpenAI API key (Get one [here](https://platform.openai.com/account/api-keys))", type = "password")
-                st.info("Make sure you add a payment method to your OpenAI account as the free tier does not suffice.")
-            if st.session_state["API_KEY"] != "":
+                api_key_text.info("Make sure you add a payment method or credits to your OpenAI account as the free tier does not suffice.") # TODO: Make this disappear with the input box
+            if st.session_state["API_KEY"] != "":   
+                if st.checkbox(label = "Use GPT4"):
+                    st.session_state["model"] = "gpt-4-turbo-preview"
+                    st.info("GPT4 is slower and more expensive. Access must be allowed for the API key.")
+                else:
+                    st.session_state["model"] = "gpt-3.5-turbo"
+
                 api_key.empty()
+                api_key_text.empty()
 
             if "decks" in st.session_state:
                 st.session_state["no_ankiconnect"] = False
@@ -83,7 +91,7 @@ class AppView:
                                         preview = pix.tobytes(output='jpg', jpg_quality=90)
 
                                         st.session_state['image_' + str(i)] = preview
-                                        # TODO: Remove redundant text
+                                        # TODO: Remove redundant text; only use if more than 3? lines -> check if mainly picture then GPT4-Vision?
                                         st.session_state['text_' + str(i)] = page.get_text(sort = True)
                                         if i == 0:
                                             st.session_state["gpt_lang"] = self.actions.get_lang(page.get_text(sort = True))
@@ -96,7 +104,7 @@ class AppView:
                 else:
                     st.session_state["hide_file_uploader"] = True
                     st.rerun()
-            
+
             languages = ['English', 'Bengali', 'French', 'German', 'Hindi', 'Urdu', 'Mandarin Chinese', 'Polish', 'Portuguese', 'Spanish', 'Arabic']
             if "gpt_lang" in st.session_state:
                 if st.session_state["gpt_lang"] in languages:
@@ -110,12 +118,16 @@ class AppView:
                 if st.session_state['API_KEY'] == "":
                     num = st.number_input('Number of pages', value=1, format='%d', disabled = True)
                 else:
+                    if "num_pages" not in st.session_state:
+                        st.session_state['num_pages'] = 10
                     if "deck_key" in st.session_state:
-                        num = st.number_input('Number of pages', value=st.session_state.num_pages, min_value=1, max_value = st.session_state['page_count'], format='%d', key = "num_pages")
+                        num = st.number_input('Number of pages', value = st.session_state.num_pages, min_value=1, max_value = st.session_state['page_count'], format='%d', key = "num_pages")
                     else:
                         num = st.number_input('Number of pages', value = st.session_state['page_count'] if st.session_state['page_count'] < 10 else 10, min_value=1, max_value = st.session_state['page_count'], format='%d', key = "num_pages")
             with col2:
                 if "deck_key" in st.session_state:
+                    if "start_page" not in st.session_state:
+                        st.session_state['start_page'] = 1
                     start = st.number_input('Starting page', value=st.session_state.start_page, min_value=1, max_value = st.session_state['page_count'], format='%i', key = "start_page")
                 else:
                     start = st.number_input('Starting page', value=None, min_value=1, max_value = st.session_state['page_count'], format='%i', key = "start_page")
@@ -377,7 +389,18 @@ class AppView:
                         if "flashcards_" + str(p) + "_added" in st.session_state:
                             st.info('Already added cards will not be overwritten when adding again. Change "Front" text to add new card(s). Original card(s) will remain in Anki.')
                         if st.session_state.no_ankiconnect == True:
-                            st.warning("You need AnkiConnect to be able to add cards")                    
+                            st.warning("You need AnkiConnect to be able to add cards")
+
+        col1, col2, col3 = st.columns([1.3,1,1])
+        with col2:
+            pages_rem = st.session_state.page_count - st.session_state.start_page - st.session_state.num_pages + 1
+            no_pages = min(pages_rem, st.session_state.num_pages)
+            if no_pages > 0:
+                if st.button(f"Next {no_pages} page(s)"):
+                    start_page = st.session_state.start_page
+                    del st.session_state.start_page
+                    st.session_state["start_page"] = start_page + st.session_state.num_pages
+                    st.rerun()
 
     def clear_data(self):
         for key in st.session_state.keys():

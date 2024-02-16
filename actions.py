@@ -80,6 +80,7 @@ You are receiving the text from one slide of a lecture. Use the following princi
 - Questions and answers must be in """ + st.session_state["lang"] + """.
 - Ignore information about the uni, course, professor or auxiliary slide information.
 - If whole slide fits on one flashcard, do that.
+- Use "null_function" if page is just a table of contents, learning objectives or a title slide
 """
         
         new_chunk = st.session_state['text_' + str(page)]
@@ -95,56 +96,65 @@ You are receiving the text from one slide of a lecture. Use the following princi
         max_retries = 3
         retries = 0
         while retries < max_retries:
-            completion = client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": behaviour
-                    },
-                    {
-                        "role": "user",
-                        "content": new_chunk
-                    }
-                ],
-                tools=[
-                    {
-                        "type": "function",
-                        "function": {
-                            "name": "flashcard_function",
-                            "description": "Create flashcards",
-                            "parameters": {
-                                "type": "object",
-                                "properties": {
-                                    "flashcards": {
-                                        "type": "array",
-                                            "items": {
-                                                "type": "object",
-                                                "properties": {
-                                                "front": {"type": "string", "description": "Front side of the flashcard; a question"},
-                                                "back": {"type": "string", "description": "Back side of the flashcard; the answer"}
+            try:
+                completion = client.chat.completions.create(
+                    model=st.session_state["model"],
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": behaviour
+                        },
+                        {
+                            "role": "user",
+                            "content": new_chunk
+                        }
+                    ],
+                    tools=[
+                        {
+                            "type": "function",
+                            "function": {
+                                "name": "flashcard_function",
+                                "description": "Create flashcards",
+                                "parameters": {
+                                    "type": "object",
+                                    "properties": {
+                                        "flashcards": {
+                                            "type": "array",
+                                                "items": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                    "front": {"type": "string", "description": "Front side of the flashcard; a question"},
+                                                    "back": {"type": "string", "description": "Back side of the flashcard; the answer"}
+                                                    }
                                                 }
-                                            }
+                                        }
                                     }
                                 }
                             }
-                        }
-                    },
-                    {
-                        "type": "function",
-                        "function": {
-                            "name": "null_function",
-                            "description": "Function to use if page is just a table of contents, learning objectives or a title slide",
-                            "parameters": {
-                                "type": "object",
-                                "properties": {}
+                        },
+                        {
+                            "type": "function",
+                            "function": {
+                                "name": "null_function",
+                                "description": "Function to use if page is just a table of contents, learning objectives or a title slide",
+                                "parameters": {
+                                    "type": "object",
+                                    "properties": {}
+                                }
                             }
                         }
-                    }
-                ],
-                # TODO: play with temperature
-                temperature=0.9,
-            )
+                    ],
+                    # TODO: play with temperature
+                    temperature=0.8,
+                )
+            except openai.APIError as e:
+                continue
+            except openai.APIConnectionError as e:
+                continue
+            except openai.RateLimitError as e:
+                    st.warning(f"OpenAI API request exceeded rate limit::\n\n{str(e)}\n\n**Fix the problem, refresh the page and try again**")
+                    st.session_state["openai_error"] = e
+                    st.stop()
             
             print(f"Call no. {str(retries + 1)} for slide {str(page + 1)}")
             if completion.choices[0].message.tool_calls is not None:
@@ -176,6 +186,7 @@ You are receiving the text from one slide of a lecture. Use the following princi
         try:
             # TODO: Process response from API
             # TODO: Turn cards into "span" so they don't become paragraphs: https://python-markdown.github.io/extensions/md_in_html/
+            # TODO: Add all cards in on go, so some don't occasionally not get added
             for index, card in enumerate(cards):
                 no = true_list[index]
                 front = markdown.markdown(card['front'], extensions=['nl2br'])

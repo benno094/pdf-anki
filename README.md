@@ -33,6 +33,7 @@ Note: App adds a custom note type so that there is no issue with note's name and
 
 0.8 beta
 
+- Add option to use GPT4
 - Errors returned by openai are displayed
 - Added button to hide page
 
