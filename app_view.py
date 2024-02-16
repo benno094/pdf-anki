@@ -13,7 +13,7 @@ class AppView:
         self.actions = actions
 
     def display(self):
-        dev = False
+        dev = True
 
         # TODO: Check if GPT-4 is available and if openai account has enough credits
         if "no_ankiconnect" in st.session_state and st.session_state.no_ankiconnect == False:
