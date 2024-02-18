@@ -80,7 +80,9 @@ You are receiving the text from one slide of a lecture. Use the following princi
 - Questions and answers must be in """ + st.session_state["lang"] + """.
 - Ignore information about the uni, course, professor or auxiliary slide information.
 - If whole slide fits on one flashcard, do that.
-- Use "null_function" if page is just a table of contents, learning objectives or a title slide
+- Use "null_function" if page is just a table of contents, learning objectives or a title slide.
+
+You may use markdown to format the flashcards
 """
         
         new_chunk = st.session_state['text_' + str(page)]
