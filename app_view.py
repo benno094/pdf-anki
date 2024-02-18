@@ -43,7 +43,7 @@ class AppView:
                 st.session_state['API_KEY'] = api_key.text_input("Enter OpenAI API key (Get one [here](https://platform.openai.com/account/api-keys))", type = "password")
                 api_key_text.info("Make sure you add a payment method or credits to your OpenAI account as the free tier does not suffice.") # TODO: Make this disappear with the input box
             if st.session_state["API_KEY"] != "":   
-                if st.checkbox(label = "Use GPT4"):
+                if st.checkbox(label = "Use GPT4", key = "GPT4"):
                     st.session_state["model"] = "gpt-4-turbo-preview"
                     st.info("GPT4 is slower and more expensive. Access must be allowed for the API key.")
                 else:

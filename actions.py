@@ -65,7 +65,7 @@ class Actions:
 
         return completion.choices[0].message.content
 
-    def send_to_gpt(self, page):
+    def send_to_gpt(self, page, image = None):
         # TODO: Check token count and send several pages, if possible
         # TODO: Add timeout
         prompt = """
@@ -82,8 +82,10 @@ You are receiving the text from one slide of a lecture. Use the following princi
 - If whole slide fits on one flashcard, do that.
 - Use "null_function" if page is just a table of contents, learning objectives or a title slide.
 
-You may use markdown to format the flashcards
 """
+
+        if st.session_state["model"] == "gpt-4-turbo-preview":
+            prompt += "\nYou may use markdown to format the flashcards\n"
         
         new_chunk = st.session_state['text_' + str(page)]
         new_chunk = prompt + 'Text: """\n' + new_chunk + '\n"""'
