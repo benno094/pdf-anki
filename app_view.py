@@ -1,11 +1,11 @@
 # AppView.py
+# -*- coding: utf-8 -*-
 import io
 import json
 import streamlit as st
 from streamlit_extras.badges import badge
 import fitz
 from streamlit_cropper import st_cropper
-from streamlit_extras.badges import badge
 from PIL import Image
 
 class AppView:
@@ -286,6 +286,7 @@ class AppView:
                                 # TODO: Add option to modify a flashcard using GPT with a individual prompt/button
                                 # TODO: Make function for creation of flashcards
                                 # Default state: display flashcard
+
                                 if f"fc_active_{p, i}" not in st.session_state:
                                     if st.session_state["flashcards_" + str(p) + "_count"] > 5:
                                         st.session_state[f"fc_active_{p, i}"] = False
