@@ -84,14 +84,11 @@ You are receiving the text from one slide of a lecture. Use the following princi
 - Use "null_function" if page is just a table of contents, learning objectives or a title slide.
 
 """
-
-        if st.session_state["model"] == "gpt-4-turbo-preview":
-            prompt += "\nYou may use markdown to format the flashcards\n"
         
         new_chunk = st.session_state['text_' + str(page)]
         new_chunk = prompt + 'Text: """\n' + new_chunk + '\n"""'
 
-        behaviour = "You are a flashcard making assistant. Follow the user's requirements carefully and to the letter. Always call one of the provided functions."
+        behaviour = "You are a flashcard making assistant. Follow the user's requirements carefully and to the letter. Always call one of the provided functions. The response must be in JSON."
 
         if st.session_state['API_KEY'] == "":
             client.api_key = st.secrets['OPENAI_API_KEY']
@@ -103,7 +100,8 @@ You are receiving the text from one slide of a lecture. Use the following princi
         while retries < max_retries:
             try:
                 completion = client.chat.completions.create(
-                    model=st.session_state["model"],
+                    model="gpt-3.5-turbo",
+                    response_format = { "type": "json_object" },
                     messages=[
                         {
                             "role": "system",
@@ -195,7 +193,7 @@ You are receiving the text from one slide of a lecture. Use the following princi
             for index, card in enumerate(cards):
                 no = true_list[index]
                 front = markdown.markdown(card['front'], extensions=['nl2br'])
-                back = markdown.markdown(card['back'], extensions=['nl2br'])
+                back = markdown.markdown(card['back'], extensions=['nl2br', 'tables'])
                 tags = st.session_state["flashcards_" + str(page) + "_tags"]
                 if f"img_{page, no}" in st.session_state:
                     image_bytes = BytesIO()
