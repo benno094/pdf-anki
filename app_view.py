@@ -476,8 +476,6 @@ class AppView:
         try:
             success = self.actions.add_to_anki(prepared_flashcards, page)
             if success:
-                with open('training.txt', 'a') as file:
-                    file.write(prepared_flashcards + "\n")
                 # Add state for flashcards added
                 # TODO: fix flashcards reverting to GPT response once added
                 st.session_state["flashcards_" + str(page) + "_added"] = True
