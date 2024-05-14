@@ -69,7 +69,11 @@ class Actions:
     def send_to_gpt(self, page, image = None):
         # TODO: Check token count and send several pages, if possible
         # TODO: Add timeout
-        prompt = """
+        # if "prompt" not in st.session_state:
+            # if st.session_state["fine_tuning"] == True:
+            #     st.session_state["prompt"] = "- Return json."
+            # else:
+        st.session_state["prompt"] = """
 You are receiving the text from one slide of a lecture. Use the following principles when making the flashcards:
 
 - Create Anki flashcards for an exam at university level.
@@ -81,15 +85,13 @@ You are receiving the text from one slide of a lecture. Use the following princi
 - Questions and answers must be in """ + st.session_state["lang"] + """.
 - Ignore information about the uni, course, professor or auxiliary slide information.
 - If whole slide fits on one flashcard, do that.
-- Use "null_function" if page is just a table of contents, learning objectives or a title slide.
+- Use 'null_function' if page is just a table of contents, learning objectives or a title slide.
+- Return json.
 
 """
 
-        if st.session_state["model"] == "gpt-4-turbo-preview":
-            prompt += "\nYou may use markdown to format the flashcards\n"
-        
         new_chunk = st.session_state['text_' + str(page)]
-        new_chunk = prompt + 'Text: """\n' + new_chunk + '\n"""'
+        new_chunk = st.session_state["prompt"] + 'Text: """\n' + new_chunk + '\n"""'
 
         behaviour = "You are a flashcard making assistant. Follow the user's requirements carefully and to the letter. Always call one of the provided functions."
 
@@ -104,6 +106,7 @@ You are receiving the text from one slide of a lecture. Use the following princi
             try:
                 completion = client.chat.completions.create(
                     model=st.session_state["model"],
+                    response_format={ "type": "json_object" },
                     messages=[
                         {
                             "role": "system",

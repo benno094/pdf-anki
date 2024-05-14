@@ -7,13 +7,16 @@ from streamlit_extras.badges import badge
 import fitz
 from streamlit_cropper import st_cropper
 from PIL import Image
+import openai
+from openai import OpenAI
+client = OpenAI()
 
 class AppView:
     def __init__(self, actions):
         self.actions = actions
 
     def display(self):
-        dev = False
+        st.session_state['dev'] = False
 
         # TODO: Check if GPT-4 is available and if openai account has enough credits
         if "no_ankiconnect" in st.session_state and st.session_state.no_ankiconnect == False:
@@ -35,19 +38,18 @@ class AppView:
                 st.warning(f"**Refresh the page and reenter API key, the following error still persists:**\n\n {st.session_state['openai_error']}")
                 st.stop()
                     
-            if dev == True:
+            if st.session_state['dev'] == True:
                 st.session_state['API_KEY'] = st.secrets.OPENAI_API_KEY
             elif "email" in st.experimental_user and "EMAIL" in st.secrets and st.experimental_user.email == st.secrets.EMAIL:
                 st.session_state['API_KEY'] = st.secrets.OPENAI_API_KEY
             else:
                 st.session_state['API_KEY'] = api_key.text_input("Enter OpenAI API key (Get one [here](https://platform.openai.com/account/api-keys))", type = "password")
                 api_key_text.info("Make sure you add a payment method or credits to your OpenAI account as the free tier does not suffice.") # TODO: Make this disappear with the input box
-            if st.session_state["API_KEY"] != "":   
-                if st.checkbox(label = "Use GPT4", key = "GPT4"):
-                    st.session_state["model"] = "gpt-4-turbo-preview"
-                    st.info("GPT4 is slower and more expensive. Access must be allowed for the API key.")
-                else:
-                    st.session_state["model"] = "gpt-3.5-turbo"
+            if st.session_state["API_KEY"] != "":
+                # if "fine_tuning" in st.session_state and st.session_state["fine_tuning"] == True:
+                #     st.session_state["model"] = "ft:gpt-3.5-turbo-0125:personal:pdf-anki-new:9O0JdsS2"
+                # else:
+                st.session_state["model"] = "gpt-3.5-turbo"
 
                 api_key.empty()
                 api_key_text.empty()
@@ -105,23 +107,24 @@ class AppView:
                     st.session_state["hide_file_uploader"] = True
                     st.rerun()
 
-            languages = ['English', 'Bengali', 'French', 'German', 'Hindi', 'Urdu', 'Mandarin Chinese', 'Polish', 'Portuguese', 'Spanish', 'Arabic']
+            if "languages" not in st.session_state:
+                st.session_state["languages"] = ['English', 'Bengali', 'French', 'German', 'Hindi', 'Urdu', 'Mandarin Chinese', 'Polish', 'Portuguese', 'Spanish', 'Arabic']
             if "gpt_lang" in st.session_state:
-                if st.session_state["gpt_lang"] in languages:
-                    languages.remove(st.session_state["gpt_lang"])
-                languages.insert(0, st.session_state["gpt_lang"])
-            st.session_state["lang"] = st.selectbox("Returned language", languages, on_change=self.clear_flashcards, key = "lang_box")
+                if st.session_state["gpt_lang"] in st.session_state["languages"]:
+                    st.session_state["languages"].remove(st.session_state["gpt_lang"])
+                st.session_state["languages"].insert(0, st.session_state["gpt_lang"])
+                del st.session_state["gpt_lang"]
+            st.selectbox("Returned language", st.session_state["languages"], on_change=self.clear_flashcards, key = "lang")
+            st.write(st.session_state["lang"])
+
             page_info = st.empty()
-            # TODO: Start generating flashcards once page number has been chosen
             col1, col2 = st.columns(2)
             with col1: 
                 if st.session_state['API_KEY'] == "":
                     num = st.number_input('Number of pages', value=1, format='%d', disabled = True)
                 else:
-                    if "num_pages" not in st.session_state:
-                        st.session_state['num_pages'] = 10
                     if "deck_key" in st.session_state:
-                        num = st.number_input('Number of pages', value = st.session_state.num_pages, min_value=1, max_value = st.session_state['page_count'], format='%d', key = "num_pages")
+                        num = st.number_input('Number of pages', value = 10, min_value=1, max_value = st.session_state['page_count'], format='%d', key = "num_pages")
                     else:
                         num = st.number_input('Number of pages', value = st.session_state['page_count'] if st.session_state['page_count'] < 10 else 10, min_value=1, max_value = st.session_state['page_count'], format='%d', key = "num_pages")
             with col2:
@@ -166,6 +169,11 @@ class AppView:
                             st.session_state["deck_count"] += 1
                             st.session_state["deck_key"] = f"deck_{st.session_state['deck_count']}"
                         self.actions.get_decks()
+
+                    if st.session_state['dev'] == True:
+                        if st.checkbox("Use fine-tuning (could be more expensive)", key = "fine_tuning"):
+                            # st.write(client.models.list())
+                            st.markdown("Use this option to train your GPT model to obtain better results. A few pointers:\n- At least 10 slides need to be added in one uninterrupted session for training data to be added.\n- Once fine tuning is selected for the first time, it will take a little while to start to work")
 
         if "hide_file_uploader" in st.session_state:
             with st.sidebar:
@@ -291,7 +299,11 @@ class AppView:
                                     if st.session_state["flashcards_" + str(p) + "_count"] > 5:
                                         st.session_state[f"fc_active_{p, i}"] = False
                                         st.session_state["flashcards_" + str(p) + "_to_add"] = 0
+                                        if "front" not in flashcard:
+                                            flashcard["front"] = ""
                                         st.text_input(f"Front", value=flashcard["front"], key=f"front_{p, i}", disabled=True)
+                                        if "back" not in flashcard:
+                                            flashcard["back"] = ""
                                         st.text_area(f"Back", value=flashcard["back"], key=f"back_{p, i}", disabled=True)
 
                                         col1, col2, col3 = st.columns([0.33, 0.3, 0.37])
@@ -304,7 +316,11 @@ class AppView:
                                     else:                                           
                                         st.session_state[f"fc_active_{p, i}"] = True
                                         st.write("[Markdown](https://daringfireball.net/projects/markdown/basics) supported in front and back fields")
+                                        if "front" not in flashcard:
+                                            flashcard["front"] = ""
                                         st.text_input(f"Front", value=flashcard["front"], key=f"front_{p, i}", disabled=False)
+                                        if "back" not in flashcard:
+                                            flashcard["back"] = ""
                                         st.text_area(f"Back", value=flashcard["back"], key=f"back_{p, i}", disabled=False)
 
                                         col1, col2, col3 = st.columns([0.33, 0.3, 0.37])
@@ -316,7 +332,11 @@ class AppView:
                                             pass
                                 elif f"fc_active_{p, i}" in st.session_state and st.session_state[f"fc_active_{p, i}"] == False:                                        
                                     st.write("[Markdown](https://daringfireball.net/projects/markdown/basics) supported in front and back fields")
+                                    if "front" not in flashcard:
+                                        flashcard["front"] = ""
                                     st.text_input(f"Front", value=flashcard["front"], key=f"front_{p, i}", disabled=True)
+                                    if "back" not in flashcard:
+                                        flashcard["back"] = ""
                                     st.text_area(f"Back", value=flashcard["back"], key=f"back_{p, i}", disabled=True)
 
                                     col1, col2, col3 = st.columns([0.33, 0.3, 0.37])
@@ -328,7 +348,11 @@ class AppView:
                                         pass
                                 else:                                    
                                     st.write("[Markdown](https://daringfireball.net/projects/markdown/basics) supported in front and back fields")
+                                    if "front" not in flashcard:
+                                        flashcard["front"] = ""
                                     st.text_input(f"Front", value=flashcard["front"], key=f"front_{p, i}", disabled=False)
+                                    if "back" not in flashcard:
+                                        flashcard["back"] = ""
                                     st.text_area(f"Back", value=flashcard["back"], key=f"back_{p, i}", disabled=False)
 
                                     col1, col2, col3 = st.columns([0.33, 0.3, 0.37])
@@ -376,12 +400,17 @@ class AppView:
                             if st.session_state.no_ankiconnect == True:
                                 no_cards = True
                             if "flashcards_" + str(p) + "_added" not in st.session_state:
-                                st.button(f"Add {st.session_state['flashcards_' + str(p) + '_to_add']} flashcard(s) to Anki", key=f"add_{str(p)}", on_click=self.prepare_and_add_flashcards_to_anki, args=[p], disabled=no_cards)
+                                if st.button(f"Add {st.session_state['flashcards_' + str(p) + '_to_add']} flashcard(s) to Anki", key=f"add_{str(p)}", disabled=no_cards):
+                                    self.prepare_and_add_flashcards_to_anki(p)
+                                    self.next_page()
                             else:
-                                st.button(f"Add {st.session_state['flashcards_' + str(p) + '_to_add']} flashcard(s) to Anki again", key=f"add_{str(p)}", on_click=self.prepare_and_add_flashcards_to_anki, args=[p], disabled=no_cards)
+                                if st.button(f"Add {st.session_state['flashcards_' + str(p) + '_to_add']} flashcard(s) to Anki again", key=f"add_{str(p)}", disabled=no_cards):
+                                    self.prepare_and_add_flashcards_to_anki(p)
+                                    self.next_page()
                             if f'status_label_{str(p)}' not in st.session_state:
                                 if st.button("Hide page", key=f"hide_{str(p)}"):
                                     st.session_state[f'status_label_{str(p)}'] = "Hidden"
+                                    self.next_page()
                                     st.rerun()
                         with col2:
                             if "flashcards_" + str(p) + "_tags" not in st.session_state:
@@ -389,6 +418,12 @@ class AppView:
                             st.text_input("Tag:", value = st.session_state["flashcards_" + str(p) + "_tags"], key = f"tag_{str(p)}")
                         if "flashcards_" + str(p) + "_added" in st.session_state:
                             st.info('Already added cards will not be overwritten when adding again. Change "Front" text to add new card(s). Original card(s) will remain in Anki.')
+                        else:
+                            if f'status_label_{str(p)}' not in st.session_state:
+                                if st.session_state.fine_tuning == True:
+                                    st.checkbox("Use for training (must be selected before adding)", key = "training_" + str(p))
+                                else:
+                                    st.session_state["training_" + str(p)] = False
                         if st.session_state.no_ankiconnect == True:
                             st.warning("You need AnkiConnect to be able to add cards")
 
@@ -402,6 +437,13 @@ class AppView:
                     del st.session_state.start_page
                     st.session_state["start_page"] = start_page + st.session_state.num_pages
                     st.rerun()
+
+    def next_page(self):
+        if st.session_state['num_pages'] == 1:
+            if st.session_state['start_page'] != st.session_state['page_count']:
+                orig_st = st.session_state.start_page
+                del st.session_state.start_page
+                st.session_state['start_page'] = orig_st + 1
 
     def clear_data(self):
         for key in st.session_state.keys():
@@ -452,10 +494,17 @@ class AppView:
         try:
             success = self.actions.add_to_anki(prepared_flashcards, page)
             if success:
-                # Add state for flashcards added
-                # TODO: fix flashcards reverting to GPT response once added
                 st.session_state["flashcards_" + str(page) + "_added"] = True
                 st.session_state[f"status_label_{page}"] = "Added!"
+                if st.session_state['training_' + str(page)] == True:
+                    with open('training.jsonl', 'a', encoding='utf-8') as file:
+                        write = '{"messages": [{"role": "system", "content": "' + "You are a flashcard making assistant. Follow the user's requirements carefully and to the letter. Always call one of the provided functions."
+                        write += '"}, {"role": "user", "content": "' +  st.session_state["prompt"] + st.session_state['text_' + str(page)] + '"}, '
+                        write += '{"role": "assistant", "content": "{\\"flashcards\\": ' + str(prepared_flashcards) + '"}]}'
+                        write_clean = write.replace('\n', ' ')
+                        file.write(write_clean + '\n')
+                # Add state for flashcards added
+                # TODO: fix flashcards reverting to GPT response once added
             else:
                 raise Exception("Error 2:", success)
 
