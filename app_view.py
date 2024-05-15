@@ -115,7 +115,6 @@ class AppView:
                 st.session_state["languages"].insert(0, st.session_state["gpt_lang"])
                 del st.session_state["gpt_lang"]
             st.selectbox("Returned language", st.session_state["languages"], on_change=self.clear_flashcards, key = "lang")
-            st.write(st.session_state["lang"])
 
             page_info = st.empty()
             col1, col2 = st.columns(2)
@@ -517,6 +516,7 @@ class AppView:
             if f"{page}_is_title" in st.session_state:
                 del st.session_state[f"{page}_is_title"]
         # TODO: Receive in chunks so user knows something is happening; bundle pages together?
+        st.session_state['flashcards_' + str(page)] = "dummy cards"
         flashcards = self.actions.send_to_gpt(page)
 
         if flashcards:
