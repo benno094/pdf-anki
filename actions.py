@@ -17,8 +17,8 @@ parent_dir = os.path.dirname(os.path.abspath(__file__))
 build_dir = os.path.join(parent_dir, "API/frontend/build")
 _API = components.declare_component("API", path=build_dir)
 
-def API(action, key=None, deck=None, image = None, front=None, back=None, tags=None):
-    component_value = _API(action=action, key=key, deck=deck, image = image, front=front, back=back, tags=tags)
+def API(action, key=None, deck=None, image = None, front=None, back=None, tags=None, flashcards = None):
+    component_value = _API(action=action, key=key, deck=deck, image = image, front=front, back=back, tags=tags, flashcards=flashcards)
     return component_value
 
 class Actions:
@@ -71,7 +71,7 @@ class Actions:
         # TODO: Add timeout
         # if "prompt" not in st.session_state:
             # if st.session_state["fine_tuning"] == True:
-            #     st.session_state["prompt"] = "- Return json."
+        # st.session_state["prompt"] = "You are receiving the text from one slide of a lecture. Use the following principles when making the flashcards. Return json."
             # else:
         st.session_state["prompt"] = """
 You are receiving the text from one slide of a lecture. Use the following principles when making the flashcards:
@@ -91,7 +91,7 @@ You are receiving the text from one slide of a lecture. Use the following princi
 """
 
         new_chunk = st.session_state['text_' + str(page)]
-        new_chunk = st.session_state["prompt"] + 'Text: """\n' + new_chunk + '\n"""'
+        new_chunk = st.session_state["prompt"] + 'Text:\n' + new_chunk
 
         behaviour = "You are a flashcard making assistant. Follow the user's requirements carefully and to the letter. Always call one of the provided functions."
 
@@ -104,6 +104,19 @@ You are receiving the text from one slide of a lecture. Use the following princi
         retries = 0
         while retries < max_retries:
             try:
+                # completion = client.chat.completions.create(
+                #     model=st.session_state["model"],
+                #     messages=[
+                #         {
+                #             "role": "system",
+                #             "content": behaviour
+                #         },
+                #         {
+                #             "role": "user",
+                #             "content": new_chunk
+                #         }],
+                #         temperature=1,
+                # )
                 completion = client.chat.completions.create(
                     model=st.session_state["model"],
                     response_format={ "type": "json_object" },
@@ -175,7 +188,6 @@ You are receiving the text from one slide of a lecture. Use the following princi
                 if completion.choices[0].message.tool_calls:
                     return completion.choices[0].message.tool_calls[0].function.arguments
                 elif completion.choices[0].message.content:
-                    print("Content")
                     return completion.choices[0].message.content
     
             except Exception as e:
@@ -191,6 +203,9 @@ You are receiving the text from one slide of a lecture. Use the following princi
         for i in range(st.session_state["flashcards_" + str(page) + "_count"]):
             if f"fc_active_{page, i}" in st.session_state and st.session_state.get(f"fc_active_{page, i}", True):
                 true_list.append((i))
+
+        notes = []
+
         try:
             # TODO: Process response from API
             # TODO: Turn cards into "span" so they don't become paragraphs: https://python-markdown.github.io/extensions/md_in_html/
@@ -200,14 +215,23 @@ You are receiving the text from one slide of a lecture. Use the following princi
                 front = markdown.markdown(card['front'], extensions=['nl2br'])
                 back = markdown.markdown(card['back'], extensions=['nl2br'])
                 tags = st.session_state["flashcards_" + str(page) + "_tags"]
+                note = {
+                "deck": deck,
+                "front": front,
+                "back": back,
+                "tags": [tags]
+                }
+
                 if f"img_{page, no}" in st.session_state:
                     image_bytes = BytesIO()
                     st.session_state[f"img_{page, no}"].save(image_bytes, format='JPEG')
                     image_bytes.seek(0)
                     image = base64.b64encode(image_bytes.getvalue())
-                    API("addCardWithImage", deck = deck, image = image, front = front, back = back, tags = tags)
-                else:
-                    API("addCard", deck = deck, front = front, back = back, tags = tags)
+                    note["image"] = image
+
+                notes.append(note)
+                
+            API("addNotes", deck = deck, flashcards = notes)
             return True
         except Exception as e:
             raise ValueError("add_to_anki error: ", e)

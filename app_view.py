@@ -169,6 +169,8 @@ class AppView:
                             st.session_state["deck_key"] = f"deck_{st.session_state['deck_count']}"
                         self.actions.get_decks()
 
+                    st.info("Adding images is currently broken :sweat:")
+
                     if st.session_state['dev'] == True:
                         if st.checkbox("Use fine-tuning (could be more expensive)", key = "fine_tuning"):
                             # st.write(client.models.list())
@@ -206,6 +208,7 @@ class AppView:
             if f"{i}_is_title" not in st.session_state:
                 if "flashcards_" + str(i) not in st.session_state:
                     self.generate_flashcards(i)
+                    st.session_state[f"flashcards_generated_{i}"] = True
 
             # Create an expander for each image and its corresponding flashcards
             # If cards have been added collapse
@@ -242,7 +245,7 @@ class AppView:
                             st.image(st.session_state['image_' + str(i)])
 
                     with tabs[1]:
-                        st.warning('''Don't click "add image" while on text preview''')
+                        # st.warning('''Don't click "add image" while on text preview''')
                         st.text(st.session_state['text_' + str(i)])
 
                 # If flashcards exist for the page, show them and show 'Add to Anki' button
@@ -273,6 +276,7 @@ class AppView:
                             with col1:
                                 if st.button("Regenerate flashcards", key=f"reg_{i}"):
                                     self.generate_flashcards(i, regen = True)
+                                    st.session_state[f"flashcards_generated_{p}"] = True
                                 if f'status_label_{str(p)}' not in st.session_state:
                                     if st.button("Hide page", key=f"hide_{str(p)}"):
                                         st.session_state[f'status_label_{str(p)}'] = "Hidden"
@@ -363,32 +367,32 @@ class AppView:
                                         pass
                                 
                                 # TODO: Shift location of image relative to buttons?
-                                if f"img_{p, i}" in st.session_state:
-                                    col1, col2 = st.columns([0.9, 0.1])
-                                    with col1:                                        
-                                        st.image(st.session_state[f"img_{p, i}"])
-                                    with col2:
-                                        if "add_image" not in st.session_state or "add_image" in st.session_state and st.session_state["add_image"][0] != p or "add_image" in st.session_state and st.session_state["add_image"][1] != i:
-                                            if st.button("X", key = f"del_image_btn_{p, i}"):
-                                                del st.session_state[f"img_{p, i}"]
-                                                st.rerun()
-                                    if "add_image" in st.session_state and st.session_state["add_image"][0] == p and st.session_state["add_image"][1] == i:
-                                        if st.button("Finish adding image", key = f"finish_add_image_btn_{p, i}"):
-                                            del st.session_state["add_image"]
-                                            st.rerun()
-                                else:
-                                    if "add_image" not in st.session_state:
-                                        if st.button("Add image", key = f"add_image_btn_{p, i}"):
-                                            st.session_state[f"add_image"] = [p, i]
-                                            st.rerun()
-                                    elif "add_image" in st.session_state and st.session_state["add_image"][0] != p or st.session_state["add_image"][1] != i:
-                                        if st.button("Add image", key = f"add_image_btn_{p, i}"):
-                                            st.session_state[f"add_image"] = [p, i]
-                                            st.rerun()
-                                    else:
-                                        if st.button("Finish adding image", key = f"finish_add_image_btn_{p, i}"):
-                                            del st.session_state["add_image"]
-                                            st.rerun()
+                                # if f"img_{p, i}" in st.session_state:
+                                #     col1, col2 = st.columns([0.9, 0.1])
+                                #     with col1:                                        
+                                #         st.image(st.session_state[f"img_{p, i}"])
+                                #     with col2:
+                                #         if "add_image" not in st.session_state or "add_image" in st.session_state and st.session_state["add_image"][0] != p or "add_image" in st.session_state and st.session_state["add_image"][1] != i:
+                                #             if st.button("X", key = f"del_image_btn_{p, i}"):
+                                #                 del st.session_state[f"img_{p, i}"]
+                                #                 st.rerun()
+                                #     if "add_image" in st.session_state and st.session_state["add_image"][0] == p and st.session_state["add_image"][1] == i:
+                                #         if st.button("Finish adding image", key = f"finish_add_image_btn_{p, i}"):
+                                #             del st.session_state["add_image"]
+                                #             st.rerun()
+                                # else:
+                                #     if "add_image" not in st.session_state:
+                                #         if st.button("Add image", key = f"add_image_btn_{p, i}"):
+                                #             st.session_state[f"add_image"] = [p, i]
+                                #             st.rerun()
+                                #     elif "add_image" in st.session_state and st.session_state["add_image"][0] != p or st.session_state["add_image"][1] != i:
+                                #         if st.button("Add image", key = f"add_image_btn_{p, i}"):
+                                #             st.session_state[f"add_image"] = [p, i]
+                                #             st.rerun()
+                                #     else:
+                                #         if st.button("Finish adding image", key = f"finish_add_image_btn_{p, i}"):
+                                #             del st.session_state["add_image"]
+                                #             st.rerun()
                         col1, col2 = st.columns([0.4,1])
                         with col1:
                             # Blank out 'add to Anki' button if no cards
@@ -515,14 +519,16 @@ class AppView:
         if regen:
             if f"{page}_is_title" in st.session_state:
                 del st.session_state[f"{page}_is_title"]
+            if f"flashcards_generated_{page}" in st.session_state:
+                del st.session_state[f"flashcards_generated_{page}"]
         # TODO: Receive in chunks so user knows something is happening; bundle pages together?
-        st.session_state['flashcards_' + str(page)] = "dummy cards"
-        flashcards = self.actions.send_to_gpt(page)
+        if f"flashcards_generated_{page}" not in st.session_state:
+            flashcards = self.actions.send_to_gpt(page)
 
-        if flashcards:
-            flashcards_clean = self.actions.cleanup_response(flashcards)
+            if flashcards:
+                flashcards_clean = self.actions.cleanup_response(flashcards)
 
-            st.session_state['flashcards_' + str(page)] = flashcards_clean
-        
-        if regen:
-            st.rerun()
+                st.session_state['flashcards_' + str(page)] = flashcards_clean
+            
+            if regen:
+                st.rerun()

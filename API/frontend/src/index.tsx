@@ -6,6 +6,13 @@ import CryptoES from 'crypto-es';
 
 // TODO: Publish separate component
 
+interface Card {
+  front: string;
+  back: string;
+  tags: string[];
+  image: Uint8Array;
+}
+
 // Adds note to a deck
 async function addFlashcard(deck: string, front: string, back: string, tags: string) {
   try {
@@ -26,6 +33,58 @@ async function addFlashcard(deck: string, front: string, back: string, tags: str
     });
 
     const jsonResponse = await addNoteResponse.json();
+    return jsonResponse.result;
+  } catch (error) {
+    throw new Error('Error: Unable to reach the server');
+  }
+}
+
+// Adds note to a deck
+async function addFlashcards(deck: string, flashcards: Card[]) {
+  try {
+    const notes = await Promise.all(flashcards.map(async (card) => {
+      let note = {
+        deckName: deck,
+        modelName: 'PDF-Anki-Note',
+        fields: { Front: card.front, Back: card.back },
+        options: { allowDuplicate: false },
+        tags: card.tags,
+        picture: undefined as any  // Initialize picture as undefined
+      };
+
+      if (card.image) {
+        let binaryString = new TextDecoder().decode(card.image);
+        let date = Date.now();
+        let hash = CryptoES.SHA256(date.toString()).toString();
+
+        note.picture = [{
+          data: binaryString,
+          filename: "pdf-anki-" + hash + ".jpg",
+          fields: ["Back"]
+        }];
+      }
+
+      return note;
+    }));
+
+    const addNotesResponse = await fetch('http://localhost:8765', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        action: 'addNotes',
+        version: 6,
+        params: { notes }
+      }),
+    });
+
+    const jsonResponse = await addNotesResponse.json();
+
+    if (jsonResponse.error) {
+      throw new Error(jsonResponse.error);
+    }
+
     return jsonResponse.result;
   } catch (error) {
     throw new Error('Error: Unable to reach the server');
@@ -162,6 +221,7 @@ async function onRender(event: Event): Promise<void> {
   let front = data.args["front"]
   let back = data.args["back"]
   let tags = data.args["tags"]
+  let flashcards = data.args["flashcards"]
 
   try {
     switch (action) {
@@ -174,6 +234,10 @@ async function onRender(event: Event): Promise<void> {
       case "addCard":
         const success = await addFlashcard(deck, front, back, tags);
         Streamlit.setComponentValue(success)
+        break;
+      case "addNotes":
+        const cards = await addFlashcards(deck, flashcards);
+        Streamlit.setComponentValue(cards)
         break;
       case "addCardWithImage":
         const response = await addFlashcardWithImage(deck, image, front, back, tags);
