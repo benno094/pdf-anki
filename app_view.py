@@ -171,11 +171,6 @@ class AppView:
 
                     st.info("Adding images is currently broken :sweat:")
 
-                    if st.session_state['dev'] == True:
-                        if st.checkbox("Use fine-tuning (could be more expensive)", key = "fine_tuning"):
-                            # st.write(client.models.list())
-                            st.markdown("Use this option to train your GPT model to obtain better results. A few pointers:\n- At least 10 slides need to be added in one uninterrupted session for training data to be added.\n- Once fine tuning is selected for the first time, it will take a little while to start to work")
-
         if "hide_file_uploader" in st.session_state:
             with st.sidebar:
                 col1, col2 = st.columns([0.9, 0.1])
@@ -421,12 +416,6 @@ class AppView:
                             st.text_input("Tag:", value = st.session_state["flashcards_" + str(p) + "_tags"], key = f"tag_{str(p)}")
                         if "flashcards_" + str(p) + "_added" in st.session_state:
                             st.info('Already added cards will not be overwritten when adding again. Change "Front" text to add new card(s). Original card(s) will remain in Anki.')
-                        else:
-                            if f'status_label_{str(p)}' not in st.session_state:
-                                if st.session_state.fine_tuning == True:
-                                    st.checkbox("Use for training (must be selected before adding)", key = "training_" + str(p))
-                                else:
-                                    st.session_state["training_" + str(p)] = False
                         if st.session_state.no_ankiconnect == True:
                             st.warning("You need AnkiConnect to be able to add cards")
 
