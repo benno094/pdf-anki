@@ -106,7 +106,7 @@ Example:
 | The olfactory nerve is responsible for the sense of smell | - It is the 1st cranial nerve that exits through the cribiform formina. It's also the only cranial nerve that isn't myelinated |
 | Chromosomes are organized structures of DNA and proteins found in the nucleus | - They contain many genes, regulatory elements, and intervening sequences |
 | DNA methylation at CpG islands represses transcription | - Methylation is mostly relevant to key developmental genes - Mechanistically, methylation is used to disrupt binding of transcription factors, recruit "readers", recruit heterochromatin protein |
-| Hypoxia may be caused by carbon monoxide poisoning, which decreases the O2 content of blood (CaO2) | - Cyanide poisoning, on the other hand, increases O2 content as it's not getting extracted (cyanide binds a3 in Fe3+ state in complex IV) |
+| Hypoxia may be caused by carbon monoxide poisoning, which decreases the O2 content of blood (CaO2) | - Cyanide poisoning, on the other hand, increases O2 content as it's not getting extracted (cyanide binds to heme thats in a Fe3+ state, inhibiting Complex IV) |
 - Only add each piece of information once.
 - Questions and answers must be in """ + st.session_state["lang"] + """.
 - Ignore information about the uni, course, professor or auxiliary slide information.
