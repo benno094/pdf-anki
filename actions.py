@@ -109,9 +109,9 @@ Example:
 | Hypoxia may be caused by carbon monoxide poisoning, which decreases the O2 content of blood (CaO2) | - Cyanide poisoning, on the other hand, increases O2 content as it's not getting extracted (cyanide binds to heme thats in a Fe3+ state, inhibiting Complex IV) |
 - Only add each piece of information once.
 - Questions and answers must be in """ + st.session_state["lang"] + """.
-- Ignore information about the uni, course, professor or auxiliary slide information.
+- Ignore information about the school or professor.
 - If whole slide fits on one flashcard, do that.
-- Use 'null_function' if page is just a table of contents, learning objectives or a title slide.
+- Use 'null_function' if page is just a title slide.
 - Return json.
 
 """
