@@ -24,9 +24,6 @@ class AppView:
         if "no_ankiconnect" in st.session_state and st.session_state.no_ankiconnect == False:
             if "api_perms" not in st.session_state:
                 self.actions.check_API()
-
-        st.set_page_config(page_title="PDFtoAnki", page_icon="📄", layout="wide")
-        st.header("📄PDFtoAnki")
     
         col1, col2 = st.columns([0.78, 0.22], gap = "large")
         with col1:
