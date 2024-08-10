@@ -2,9 +2,11 @@
 # -*- coding: utf-8 -*-
 import io
 import json
+import base64
 import streamlit as st
 from streamlit_extras.badges import badge
 import fitz
+import tempfile
 from streamlit_cropper import st_cropper
 from PIL import Image
 import openai
@@ -24,20 +26,20 @@ class AppView:
                 self.actions.check_API()
 
         col1, col2 = st.columns([0.78, 0.22], gap = "large")
-        with col1:            
-            st.markdown("[Buy Me A Coffee](https://www.buymeacoffee.com/benno094) to support development of the site or let us know what you think [here](mailto:pdf.to.anki@gmail.com).")
+        with col1:
+            st.markdown("[Buy Them Coffee](https://www.buymeacoffee.com/benno094) to support development of PDFtoAnki")
         with col2:
             st.markdown("**Disclaimer:** Use at your own risk.")
 
         with st.sidebar:
-            st.markdown("Easily create and import flashcards directly into Anki with PDF-Anki -- powered by GPT 4o mini from OpenAI.\n Alternate link: [pdftoanki.xyz](https://pdftoanki.xyz)")
+            st.markdown("Easily create and import flashcards directly into Anki with PDF-Anki -- powered by GPT 4o mini from OpenAI.")
             badge(type="twitter", name="PDFToAnki")
             api_key = st.empty()
             api_key_text = st.empty()
             if "openai_error" in st.session_state:
                 st.warning(f"**Refresh the page and reenter API key, the following error still persists:**\n\n {st.session_state['openai_error']}")
                 st.stop()
-                    
+
             if st.session_state['dev'] == True:
                 st.session_state['API_KEY'] = st.secrets.OPENAI_API_KEY
             elif "email" in st.experimental_user and "EMAIL" in st.secrets and st.experimental_user.email == st.secrets.EMAIL:
@@ -47,7 +49,7 @@ class AppView:
                 api_key_text.info("Make sure you add a payment method or credits to your OpenAI account as the free tier does not suffice.") # TODO: Make this disappear with the input box
             if st.session_state["API_KEY"] != "":
                 # if "fine_tuning" in st.session_state and st.session_state["fine_tuning"] == True:
-                #     st.session_state["model"] = "ft:gpt-3.5-turbo-0125:personal:pdf-anki-new:9O0JdsS2"
+                #     st.session_state["model"] = "ft:gpt-4o-mini:personal:pdf-anki-new:9O0JdsS2"
                 # else:
                 st.session_state["model"] = "gpt-4o-mini"
 
@@ -65,7 +67,7 @@ class AppView:
                 else:
                     pass
 
-            if "hide_file_uploader" not in st.session_state:                
+            if "hide_file_uploader" not in st.session_state:
                 if "file_uploader_key" not in st.session_state:
                     st.session_state["file_uploader_key"] = "not_hidden"
 
@@ -73,31 +75,31 @@ class AppView:
                     # TODO: Add warning for strange characters in file name
                     file = st.file_uploader("Choose a file", type=["pdf"], key = st.session_state["file_uploader_key"])
                     if file:
-                        with file:
-                            if "page_count" not in st.session_state:
-                                st.session_state["file_name"] = file.name
-                                doc = fitz.open("pdf", file.read())                                
-                                st.session_state['page_count'] = len(doc)
+                        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
+                            temp_file.write(file.read())
+                            temp_file_path = temp_file.name
+                            st.session_state["file_name"] = temp_file_path
+
+                            # Open the PDF using the temporary file path
+                            doc = fitz.open(temp_file_path)
+                            st.session_state['page_count'] = len(doc)
 
                             # Check if previews already exist
                             if f"image_{st.session_state['page_count'] - 1}" not in st.session_state:
-
-
-                                    progress_bar = st.progress(0, text = "Extracting text from pages...")
+                                    progress_bar = st.progress(0, text = "Extracting text and images from pages...")
                                     # TODO: Remove headers and footers; Don't send page if below a certain amount of chars
                                     # TODO: Detect table
                                     # Load the PDF and its previews and extract text for each page
                                     for i, page in enumerate(doc):
-                                        progress_bar.progress(i / len(doc), text = "Extracting text from pages...")
+                                        progress_bar.progress(i / len(doc), text = "Extracting text and images from pages...")
                                         pix = page.get_pixmap(dpi=100)
                                         preview = pix.tobytes(output='jpg', jpg_quality=90)
-
                                         st.session_state['image_' + str(i)] = preview
                                         # TODO: Remove redundant text; only use if more than 3? lines -> check if mainly picture then GPT4-Vision?
                                         st.session_state['text_' + str(i)] = page.get_text(sort = True)
                                         if i == 0:
                                             st.session_state["gpt_lang"] = self.actions.get_lang(page.get_text(sort = True))
-                            
+
                             st.session_state["file_uploader_key"] = "hidden"
                             st.rerun()
                     else:
@@ -118,7 +120,7 @@ class AppView:
 
             page_info = st.empty()
             col1, col2 = st.columns(2)
-            with col1: 
+            with col1:
                 if st.session_state['API_KEY'] == "":
                     num = st.number_input('Number of pages', value=1, format='%d', disabled = True)
                 else:
@@ -135,7 +137,7 @@ class AppView:
                     start = st.number_input('Starting page', value=None, min_value=1, max_value = st.session_state['page_count'], format='%i', key = "start_page")
             if st.session_state['API_KEY'] == "":
                 st.warning("Enter API key to remove limitations")
-            
+
             deck_info = st.empty()
         if "start_page" in st.session_state and st.session_state.start_page == None:
             page_info.info("Choose a starting page")
@@ -194,12 +196,12 @@ class AppView:
 
         if st.session_state["start_page"] == None:
             st.stop()
-        
+
         # Loop through the pages
         for i in range(start - 1, start + num - 1):
             if i == st.session_state['page_count']:
                 break
-            # st.toast("Generating flashcards for page " + str(i + 1) + "/" + str(st.session_state['page_count']))                
+            # st.toast("Generating flashcards for page " + str(i + 1) + "/" + str(st.session_state['page_count']))
             if f"{i}_is_title" not in st.session_state:
                 if "flashcards_" + str(i) not in st.session_state:
                     self.generate_flashcards(i)
@@ -311,7 +313,7 @@ class AppView:
                                             st.button("New flashcard", key=f"add_{p, i}", on_click=self.add_flashcard, args=[p])
                                         with col3:
                                             pass
-                                    else:                                           
+                                    else:
                                         st.session_state[f"fc_active_{p, i}"] = True
                                         st.write("[Markdown](https://daringfireball.net/projects/markdown/basics) supported in front and back fields")
                                         if "front" not in flashcard:
@@ -328,7 +330,7 @@ class AppView:
                                             st.button("New flashcard", key=f"add_{p, i}", on_click=self.add_flashcard, args=[p])
                                         with col3:
                                             pass
-                                elif f"fc_active_{p, i}" in st.session_state and st.session_state[f"fc_active_{p, i}"] == False:                                        
+                                elif f"fc_active_{p, i}" in st.session_state and st.session_state[f"fc_active_{p, i}"] == False:
                                     st.write("[Markdown](https://daringfireball.net/projects/markdown/basics) supported in front and back fields")
                                     if "front" not in flashcard:
                                         flashcard["front"] = ""
@@ -344,7 +346,7 @@ class AppView:
                                         st.button("New flashcard", key=f"add_{p, i}", on_click=self.add_flashcard, args=[p])
                                     with col3:
                                         pass
-                                else:                                    
+                                else:
                                     st.write("[Markdown](https://daringfireball.net/projects/markdown/basics) supported in front and back fields")
                                     if "front" not in flashcard:
                                         flashcard["front"] = ""
@@ -360,11 +362,11 @@ class AppView:
                                         st.button("New flashcard", key=f"add_{p, i}", on_click=self.add_flashcard, args=[p])
                                     with col3:
                                         pass
-                                
+
                                 # TODO: Shift location of image relative to buttons?
                                 # if f"img_{p, i}" in st.session_state:
                                 #     col1, col2 = st.columns([0.9, 0.1])
-                                #     with col1:                                        
+                                #     with col1:
                                 #         st.image(st.session_state[f"img_{p, i}"])
                                 #     with col2:
                                 #         if "add_image" not in st.session_state or "add_image" in st.session_state and st.session_state["add_image"][0] != p or "add_image" in st.session_state and st.session_state["add_image"][1] != i:
@@ -446,7 +448,7 @@ class AppView:
     def clear_flashcards(self):
         for key in st.session_state.keys():
             if key.startswith("flashcards") or key.startswith("fc_active") or key.startswith("status_label") or key.startswith("front") or key.startswith("back"):
-                del st.session_state[key] 
+                del st.session_state[key]
             if key.endswith("is_title"):
                 del st.session_state[key]
 
@@ -455,7 +457,7 @@ class AppView:
         st.session_state["flashcards_" + str(page) + "_to_add"] -= 1
 
     def enable_flashcard(self, page, num):
-        st.session_state[f"fc_active_{page, num}"] = True        
+        st.session_state[f"fc_active_{page, num}"] = True
         st.session_state["flashcards_" + str(page) + "_to_add"] += 1
 
     def add_flashcard(self, page):
@@ -473,15 +475,31 @@ class AppView:
         st.session_state["flashcards_" + str(page) + "_to_add"] += 1
         st.session_state['flashcards_' + str(page)].append({'front': '', 'back': ''})
 
+    def extract_images_from_page(self, page):
+        images = []
+        image_list = page.get_images(full=True)
+
+        for img in image_list:
+            xref = img[0]
+            base_image = page.parent.extract_image(xref)  # Use page.parent to extract the image
+            image_bytes = base_image["image"]
+            image_ext = base_image["ext"]
+            image_base64 = base64.b64encode(image_bytes).decode('utf-8')
+            images.append(f'<img src="data:image/{image_ext};base64,{image_base64}" alt="Embedded Image">')
+
+        return images
     def prepare_and_add_flashcards_to_anki(self, page):
         prepared_flashcards = []
+        pdf_document = fitz.open(st.session_state["file_name"])
+        pdf_page = pdf_document[page]
+        images = self.extract_images_from_page(pdf_page)
 
         for i in range(st.session_state["flashcards_" + str(page) + "_count"]):
             if st.session_state[f"fc_active_{page, i}"] != False:
                 front_text = st.session_state[f"front_{page, i}"]
                 back_text = st.session_state[f"back_{page, i}"]
-
-                prepared_flashcards.append({"front": front_text, "back": back_text})
+                back_text_with_images = ''.join(images) + '<br><br>' + back_text
+                prepared_flashcards.append({"front": front_text, "back": back_text_with_images})
 
         try:
             success = self.actions.add_to_anki(prepared_flashcards, page)
@@ -518,6 +536,6 @@ class AppView:
                 flashcards_clean = self.actions.cleanup_response(flashcards)
 
                 st.session_state['flashcards_' + str(page)] = flashcards_clean
-            
+
             if regen:
                 st.rerun()
