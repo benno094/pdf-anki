@@ -174,8 +174,6 @@ class AppView:
                             st.session_state["deck_key"] = f"deck_{st.session_state['deck_count']}"
                         self.actions.get_decks()
 
-                    st.info("Adding images is currently broken :sweat:")
-
         if "hide_file_uploader" in st.session_state:
             with st.sidebar:
                 col1, col2 = st.columns([0.9, 0.1])
