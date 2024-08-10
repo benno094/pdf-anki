@@ -27,12 +27,12 @@ class AppView:
 
         col1, col2 = st.columns([0.78, 0.22], gap = "large")
         with col1:
-            st.markdown("[Buy Them Coffee](https://www.buymeacoffee.com/benno094) to support development of PDFtoAnki")
+            st.markdown("[Buy Them Coffee](https://www.buymeacoffee.com/benno094) to support the original creator of PDFtoAnki")
         with col2:
             st.markdown("**Disclaimer:** Use at your own risk.")
 
         with st.sidebar:
-            st.markdown("Easily create and import flashcards directly into Anki with PDF-Anki -- powered by GPT 4o mini from OpenAI.")
+            st.markdown("Still in Beta. Easily create and import flashcards directly into Anki with PDF-Anki -- powered by GPT 4o mini from OpenAI.")
             badge(type="twitter", name="PDFToAnki")
             api_key = st.empty()
             api_key_text = st.empty()
