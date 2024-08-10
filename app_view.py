@@ -475,6 +475,7 @@ class AppView:
         st.session_state[f"fc_active_{page, i}"] = True
         st.session_state["flashcards_" + str(page) + "_to_add"] += 1
         st.session_state['flashcards_' + str(page)].append({'front': '', 'back': ''})
+    
     def extract_images_from_page(self, page):
         images = []
         image_list = page.get_images(full=True)
@@ -488,6 +489,7 @@ class AppView:
             images.append(f'<img src="data:image/{image_ext};base64,{image_base64}" alt="Embedded Image">')
 
         return images
+    
     def prepare_and_add_flashcards_to_anki(self, page):
         prepared_flashcards = []
         pdf_document = fitz.open(st.session_state["temp_file_path"])
