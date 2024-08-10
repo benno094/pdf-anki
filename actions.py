@@ -45,7 +45,7 @@ class Actions:
 
         try:
             completion = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "You are a helpful assistant."},
                 {"role": "user", "content": f"Return in one word the language of this text: {text}"}
@@ -271,7 +271,7 @@ You are receiving the text from one slide of a lecture. Use the following princi
             return response_data
 
         except Exception as e:
-            print(f"Error with OpenAI's GPT-3.5 Turbo: {str(e)}\nReturned:\n{text}")
+            print(f"Error with OpenAI's GPT-4o mini: {str(e)}\nReturned:\n{text}")
 
     def escape_inner_brackets(self, match_obj):
         inner_text = match_obj.group(0)
