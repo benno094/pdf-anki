@@ -1,5 +1,7 @@
 # PDF to Anki
 
+All credit goes to benno094, who originally created the code.
+
 ## Introduction
 
 PDF to Anki program using GPT 4o mini from OpenAI. Streamlit is the web-GUI. Shout-out to OpenAI and Streamlit for saving me a ton of work!
@@ -30,6 +32,13 @@ Note: App adds a custom note type so that there is no issue with note's name and
 - Error handling of api errors
 
 ### Changelog:
+
+0.81 Beta
+
+- Changed gpt 3.5 turbo for gpt 4o mini
+- Images are now transferred with the cards
+- Images are now analyzed by gpt 4o mini
+- Prompt was improved, but orientated for medical students.
 
 0.8 beta
 
