@@ -25,6 +25,9 @@ class AppView:
             if "api_perms" not in st.session_state:
                 self.actions.check_API()
 
+        st.set_page_config(page_title="PDFtoAnki", page_icon="📄", layout="wide")
+        st.header("📄PDFtoAnki")
+    
         col1, col2 = st.columns([0.78, 0.22], gap = "large")
         with col1:
             st.markdown("[Buy Them Coffee](https://www.buymeacoffee.com/benno094) to support benno094, the original creator of PDFtoAnki")
