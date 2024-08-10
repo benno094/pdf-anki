@@ -74,15 +74,32 @@ class Actions:
         # st.session_state["prompt"] = "You are receiving the text from one slide of a lecture. Use the following principles when making the flashcards. Return json."
             # else:
         st.session_state["prompt"] = """
-You are receiving the text from one slide of a lecture. Use the following principles when making the flashcards:
+You are receiving the text from one slide of a lecture. Use the following principles when making the Anki cloze deletion cards.:
 
-- Create Anki flashcards for an exam at university level.
-- Each card is standalone.
-- Short answer.
-- All information on slide needs to be used and only use the information that is on the slide.
-- Answers should be on the back and not included in the question.
-- Only add each piece of information once.
-- Questions and answers must be in """ + st.session_state["lang"] + """.
+Task: Your task is to thoroughly analyze the source material and condense the information into concise and direct statements using Anki cloze deletion mark-up. Ensure that each statement is clearly written, easily understandable, and adheres to the specified formatting and reference criteria. 
+
+Formatting Criteria: 
+- Construct a table with two columns: "Front" and "Back".
+- Each row of the "Front" column should contain a single statement written in Anki cloze deletion mark-up, focusing on the source material.
+- Each row of the "back" column should provide additional explanations for the corresponding "Front". There should be no cloze deletions in this column.
+
+Reference Criteria for each "Front":
+- Restrict each statement to 2 cloze deletions. If needed, you may add 1-2 more cloze deletions but restrict them to either cloze1 or cloze2.
+- Limit the word count of each statement to less than 40 words.
+- Keep the text within the cloze deletions limited to one or two Source key words.
+- Each statement must be able to stand alone. Include the subject of the statement somewhere in the text.
+- Keep ONLY simple, direct, cloze deletion statements in the "Statements" column. Keep any additional explanatory information in the "Notes" column search the, and research USMLE textbook for detailed explanations supporting the statement.
+
+Example: 
+| Front | Back |
+| --- | --- |
+| {{c1::word}} Give an example of what you want here | - Example of notes here |
+| This is a {{c1::second}} example to reinforce the formatting. | - More example notes here |
+| The {{c1::olfactory nerve}} is responsible for the sense of {{c2::smell}} | - It is the 1st cranial nerve. It's the only cranial nerve that isn't myelinated |
+| {{c1::Chromosomes}} are organized structures of DNA and proteins found in the {{c2::nucleus}} | - They contain many genes, regulatory elements, and intervening sequences |
+| DNA {{c1::methylation}} at {{c2::CpG}} islands {{c3::represses}} transcription | - Methylation is mostly relevant to key developmental genes - Mechanistically, methylation is used to disrupt binding of transcription factors, recruit "readers", recruit heterochromatin protein |
+| Hypoxia may be caused by {{c1::carbon monoxide}} poisoning, which decreases the O2 content of blood (CaO2) | - Cyanide poisoning, on the other hand, increases O2 content as it's not getting extracted (cyanide binds a3 in Fe3+ state in complex IV) |
+- Front and Back must be in """ + st.session_state["lang"] + """.
 - Ignore information about the uni, course, professor or auxiliary slide information.
 - If whole slide fits on one flashcard, do that.
 - Use 'null_function' if page is just a table of contents, learning objectives or a title slide.
@@ -144,8 +161,8 @@ You are receiving the text from one slide of a lecture. Use the following princi
                                                 "items": {
                                                     "type": "object",
                                                     "properties": {
-                                                    "front": {"type": "string", "description": "Front side of the flashcard; a question"},
-                                                    "back": {"type": "string", "description": "Back side of the flashcard; the answer"}
+                                                    "front": {"type": "string", "description": "Front side of the flashcard; front"},
+                                                    "back": {"type": "string", "description": "Back side of the flashcard; back"}
                                                     }
                                                 }
                                         }
