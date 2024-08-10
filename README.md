@@ -2,7 +2,7 @@
 
 ## Introduction
 
-PDF to Anki program using GPT3.5-turbo from OpenAI. Streamlit is the web-GUI. Shout-out to OpenAI and Streamlit for saving me a ton of work!
+PDF to Anki program using GPT 4o mini from OpenAI. Streamlit is the web-GUI. Shout-out to OpenAI and Streamlit for saving me a ton of work!
 
 ## Requirements:
 
