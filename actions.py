@@ -83,11 +83,30 @@ class Actions:
         st.session_state["prompt"] = """
 You are receiving the text from one slide of a lecture. Use the following principles when making the flashcards:
 
-- Create Anki flashcards for an exam at university level.
-- Each question is standalone.
-- Short answer.
-- All information on slide needs to be used and only use the information that is on the slide.
-- Answers should be on the back and not included in the question.
+Material: "Source material"
+
+Task: Your task is to analyze the material and condense the information into concise and direct statements. Ensure that each statement is clearly written at a level appropriate for medical students while being easily understandable, and adheres to the specified formatting and reference criteria. 
+
+Formatting Criteria: 
+- Construct a table with two columns: "Statements" and "explanations".
+- Each row of the "Statements" column should contain a single statement focusing on the material.
+- Each row of the "explanation" column should provide additional details for the corresponding "Statement". There should be no cloze deletions in this column.
+
+Reference Criteria for each "Statement":
+- Limit the word count of each statement to less than 40 words.
+- Keep the text within the statement limited to one or two Source key words.
+- Each statement must be able to stand alone.
+- Keep ONLY simple, direct, statements in the "Statements" column. Keep any additional information in the "explanation" column search the, and research USMLE textbook for detailed explanations supporting the statement.
+
+Example: 
+| Statements | Notes |
+| --- | --- |
+| word Give an example of what you want here | - Example of notes here |
+| This is a second example to reinforce the formatting. | - More example notes here |
+| The olfactory nerve is responsible for the sense of smell | - It is the 1st cranial nerve that exits through the cribiform formina. It's also the only cranial nerve that isn't myelinated |
+| Chromosomes are organized structures of DNA and proteins found in the nucleus | - They contain many genes, regulatory elements, and intervening sequences |
+| DNA methylation at CpG islands represses transcription | - Methylation is mostly relevant to key developmental genes - Mechanistically, methylation is used to disrupt binding of transcription factors, recruit "readers", recruit heterochromatin protein |
+| Hypoxia may be caused by carbon monoxide poisoning, which decreases the O2 content of blood (CaO2) | - Cyanide poisoning, on the other hand, increases O2 content as it's not getting extracted (cyanide binds a3 in Fe3+ state in complex IV) |
 - Only add each piece of information once.
 - Questions and answers must be in """ + st.session_state["lang"] + """.
 - Ignore information about the uni, course, professor or auxiliary slide information.
@@ -152,9 +171,9 @@ You are receiving the text from one slide of a lecture. Use the following princi
                                                 "type": "object",
                                                 "properties": {
                                                     "front": {"type": "string",
-                                                              "description": "Front side of the flashcard; a question"},
+                                                              "description": "Front side of the flashcard; a statement"},
                                                     "back": {"type": "string",
-                                                             "description": "Back side of the flashcard; the answer"}
+                                                             "description": "Back side of the flashcard; the explanation"}
                                                 }
                                             }
                                         }
