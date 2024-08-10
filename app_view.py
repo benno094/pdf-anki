@@ -75,10 +75,13 @@ class AppView:
                     # TODO: Add warning for strange characters in file name
                     file = st.file_uploader("Choose a file", type=["pdf"], key = st.session_state["file_uploader_key"])
                     if file:
+                        # Store the original file name for display
+                        st.session_state["file_name"] = file.name
+
                         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
                             temp_file.write(file.read())
                             temp_file_path = temp_file.name
-                            st.session_state["file_name"] = temp_file_path
+                            st.session_state["temp_file_path"] = temp_file_path
 
                             # Open the PDF using the temporary file path
                             doc = fitz.open(temp_file_path)
@@ -414,7 +417,7 @@ class AppView:
                                     st.rerun()
                         with col2:
                             if "flashcards_" + str(p) + "_tags" not in st.session_state:
-                                st.session_state["flashcards_" + str(p) + "_tags"] = st.session_state["file_name"].replace(' ', '_').replace('.pdf', '') + "_page_" + str(p + 1)
+                                st.session_state["flashcards_" + str(p) + "_tags"] = st.session_state["file_name"].replace(' ', '_').replace('.pdf', '') + str(p + 1)
                             st.text_input("Tag:", value = st.session_state["flashcards_" + str(p) + "_tags"], key = f"tag_{str(p)}")
                         if "flashcards_" + str(p) + "_added" in st.session_state:
                             st.info('Already added cards will not be overwritten when adding again. Change "Front" text to add new card(s). Original card(s) will remain in Anki.')
@@ -474,7 +477,6 @@ class AppView:
         st.session_state[f"fc_active_{page, i}"] = True
         st.session_state["flashcards_" + str(page) + "_to_add"] += 1
         st.session_state['flashcards_' + str(page)].append({'front': '', 'back': ''})
-
     def extract_images_from_page(self, page):
         images = []
         image_list = page.get_images(full=True)
@@ -488,10 +490,9 @@ class AppView:
             images.append(f'<img src="data:image/{image_ext};base64,{image_base64}" alt="Embedded Image">')
 
         return images
-        
     def prepare_and_add_flashcards_to_anki(self, page):
         prepared_flashcards = []
-        pdf_document = fitz.open(st.session_state["file_name"])
+        pdf_document = fitz.open(st.session_state["temp_file_path"])
         pdf_page = pdf_document[page]
         images = self.extract_images_from_page(pdf_page)
 
