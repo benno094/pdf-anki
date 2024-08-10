@@ -488,6 +488,7 @@ class AppView:
             images.append(f'<img src="data:image/{image_ext};base64,{image_base64}" alt="Embedded Image">')
 
         return images
+        
     def prepare_and_add_flashcards_to_anki(self, page):
         prepared_flashcards = []
         pdf_document = fitz.open(st.session_state["file_name"])
