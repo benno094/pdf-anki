@@ -69,6 +69,7 @@ pyparsing==3.1.1
 PyPDF2==3.0.1
 python-dateutil==2.8.2
 python-dotenv==1.0.0
+python-pptx==1.0.2 
 pytz==2023.3.post1
 pytz-deprecation-shim==0.1.0.post0
 pywin32-ctypes==0.2.1
@@ -95,6 +96,7 @@ streamlit-keyup==0.2.0
 streamlit-toggle-switch==1.0.2
 streamlit-vertical-slider==2.5.5
 tenacity==8.2.3
+tiktoken==0.7.0
 toml==0.10.2
 toolz==0.12.0
 tornado==6.3.3
