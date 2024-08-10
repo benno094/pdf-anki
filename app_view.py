@@ -27,7 +27,7 @@ class AppView:
 
         col1, col2 = st.columns([0.78, 0.22], gap = "large")
         with col1:
-            st.markdown("[Buy Them Coffee](https://www.buymeacoffee.com/benno094) to support the benno094, creator of PDFtoAnki")
+            st.markdown("[Buy Them Coffee](https://www.buymeacoffee.com/benno094) to support benno094, the original creator of PDFtoAnki")
         with col2:
             st.markdown("**Disclaimer:** Use at your own risk.")
 
