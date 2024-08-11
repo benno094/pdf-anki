@@ -184,9 +184,6 @@ class AppView:
                         index=None,
                         placeholder='Anki deck'
                     )
-            if st.session_state['API_KEY'] == "":
-                st.warning("Please enter your OpenAI API key to use the flashcard generation feature.")
-                st.stop()  # Stop the script if API key is not provided
                 
                     if st.button("Refresh decks", key="deck_refresh_btn"):
                         if "decks" in st.session_state:
@@ -196,6 +193,9 @@ class AppView:
                             st.session_state["deck_count"] += 1
                             st.session_state["deck_key"] = f"deck_{st.session_state['deck_count']}"
                         self.actions.get_decks()
+            if st.session_state['API_KEY'] == "":
+                st.warning("Please enter your OpenAI API key to use the flashcard generation feature.")
+                st.stop()  # Stop the script if API key is not provided
 
         if "hide_file_uploader" in st.session_state:
             with st.sidebar:
