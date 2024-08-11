@@ -39,6 +39,12 @@ class AppView:
 
         with st.sidebar:
             st.markdown(
+                "## How to use\n"
+                "1. Enter your [OpenAI API key](https://platform.openai.com/account/api-keys) below🔑\n"
+                "2. Upload a pdf📄\n"
+                "3. Choose what pages and Anki Deck🃏\n"
+                "4. Choose your Anki Cards📚\n"
+                "4. Have fun studying🫡\n"
                 "Hey gang! Easily create and import flashcards directly into Anki with PDF-Anki -- powered by GPT 4o mini from OpenAI.")
             badge(type="twitter", name="PDFToAnki")
             badge(type="github", name="Zediious95/pdf-anki")
