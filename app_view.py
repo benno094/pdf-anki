@@ -39,7 +39,7 @@ class AppView:
             st.markdown(
                 "Hey gang! Easily create and import flashcards directly into Anki with PDF-Anki -- powered by GPT 4o mini from OpenAI.")
             badge(type="twitter", name="PDFToAnki")
-            badge(type="github", name="Zediious95/pdf-anki/tree/master")
+            badge(type="github", name="Zediious95/pdf-anki")
             
             api_key = st.empty()
             api_key_text = st.empty()
