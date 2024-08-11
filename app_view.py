@@ -39,6 +39,8 @@ class AppView:
             st.markdown(
                 "Hey gang! Easily create and import flashcards directly into Anki with PDF-Anki -- powered by GPT 4o mini from OpenAI.")
             badge(type="twitter", name="PDFToAnki")
+            st.markdown('[GitHub](https://github.com/Zediious95/pdf-anki)')
+            
             api_key = st.empty()
             api_key_text = st.empty()
             if "openai_error" in st.session_state:
