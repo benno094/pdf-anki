@@ -69,7 +69,6 @@ pyparsing==3.1.1
 PyPDF2==3.0.1
 python-dateutil==2.8.2
 python-dotenv==1.0.0
-python-pptx==1.0.0
 pytz==2023.3.post1
 pytz-deprecation-shim==0.1.0.post0
 pywin32-ctypes==0.2.1
