@@ -568,7 +568,7 @@ class AppView:
             if st.session_state[f"fc_active_{page, i}"] != False:
                 front_text = st.session_state[f"front_{page, i}"]
                 back_text = st.session_state[f"back_{page, i}"]
-                back_text_with_images = back_text + '<br><br>' + ''.join(images) 
+                back_text_with_images = back_text + ''.join(images) 
                 prepared_flashcards.append({"front": front_text, "back": back_text_with_images})
 
         try:
