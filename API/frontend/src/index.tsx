@@ -18,8 +18,8 @@ async function addFlashcard(deck: string, front: string, back: string, tags: str
   try {
     const note = {
       deckName: deck,
-      modelName: 'PDF-Anki-Note',
-      fields: { Front: front, Back: back },
+      modelName: 'AnKing',
+      fields: { Text: front, Extra: back },
       options: { allowDuplicate: false },
       tags: [tags],
     };
@@ -45,8 +45,8 @@ async function addFlashcards(deck: string, flashcards: Card[]) {
     const notes = await Promise.all(flashcards.map(async (card) => {
       let note = {
         deckName: deck,
-        modelName: 'PDF-Anki-Note',
-        fields: { Front: card.front, Back: card.back },
+        modelName: 'Anking',
+        fields: { Text: card.front, Extra: card.back },
         options: { allowDuplicate: false },
         tags: card.tags,
         picture: undefined as any  // Initialize picture as undefined
@@ -99,14 +99,14 @@ async function addFlashcardWithImage(deck: string, image: Uint8Array, front: str
   try {
     const note = {
       deckName: deck,
-      modelName: 'PDF-Anki-Note',
-      fields: { Front: front, Back: back },
+      modelName: 'AnKing',
+      fields: { Text: front, Extra: back },
       options: { allowDuplicate: false },
       tags: [ tags ],
       picture: [{
         data: binaryString,
         filename: "pdf-anki-" + hash + ".jpg",
-        fields: [ "Back" ]
+        fields: [ "Extra" ]
       }]
     };
     const addNoteResponse = await fetch('http://localhost:8765', {
@@ -156,21 +156,21 @@ async function checkModelExistence() {
     });
 
     const jsonResponse = await checkModelExistence.json();
-    if (!jsonResponse.result.includes("PDF-Anki-Note")) {
+    if (!jsonResponse.result.includes("AnKing")) {
       const createModel = await fetch('http://localhost:8765', {
       method: 'POST',
       body: JSON.stringify({
         action: "createModel",
         version: 6,
         params: {
-          modelName: "PDF-Anki-Note",
-          inOrderFields: ["Front", "Back"],
-          isCloze: false,
+          modelName: "AnKing",
+          inOrderFields: ["Text", "Extra"],
+          isCloze: true,
           cardTemplates: [
             {
-              Name: "My Card 1",
-              Front: "{{Front}}",
-              Back: "{{FrontSide}}\n\n<hr id=answer>\n\n{{Back}}<br><br>\n\nTags: {{Tags}}",
+              Name: "Cloze",
+              Front: "{{cloze:Text}}",
+              Back: "{{FrontSide}}\n\n<hr id=answer>\n\n{{Extra}}<br><br>\n\nTags: {{Tags}}",
             },
           ],
         },
