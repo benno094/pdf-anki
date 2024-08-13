@@ -89,24 +89,24 @@ Task: Your task is to analyze the material and condense the information into con
 
 Formatting Criteria: 
 - Construct a table with two columns: "Statements" and "explanations".
-- Each row of the "Statements" column should contain a single statement focusing on the material.
+- Each row of the "Statements" column should contain a single statement written in Anki cloze deletion mark-up.
 - Each row of the "explanation" column should provide additional details for the corresponding "Statement". There should be no cloze deletions in this column.
 
 Reference Criteria for each "Statement":
+- Restrict each statement to 2 cloze deletions. If needed, you may add 1-2 more cloze deletions but restrict them to either cloze1 or cloze2.
 - Limit the word count of each statement to less than 40 words.
-- Keep the text within the statement limited to one or two Source key words.
+- Keep the text within the cloze deletions limited to one or two Source key words.
 - Each statement must be able to stand alone.
 - Keep ONLY simple, direct, statements in the "Statements" column. Keep any additional information in the "explanation" column search the, and research USMLE textbook for detailed explanations supporting the statement.
 
 Example: 
 | Statements | Notes |
-| --- | --- |
-| word Give an example of what you want here | - Example of notes here |
-| This is a second example to reinforce the formatting. | - More example notes here |
-| The olfactory nerve is responsible for the sense of smell | - It is the 1st cranial nerve that exits through the cribiform formina. It's also the only cranial nerve that isn't myelinated |
-| Chromosomes are organized structures of DNA and proteins found in the nucleus | - They contain many genes, regulatory elements, and intervening sequences |
-| DNA methylation at CpG islands represses transcription | - Methylation is mostly relevant to key developmental genes - Mechanistically, methylation is used to disrupt binding of transcription factors, recruit "readers", recruit heterochromatin protein |
-| Hypoxia may be caused by carbon monoxide poisoning, which decreases the O2 content of blood (CaO2) | - Cyanide poisoning, on the other hand, increases O2 content as it's not getting extracted (cyanide binds to heme thats in a Fe3+ state, inhibiting Complex IV) |
+| {{c1::word}} Give an example of what you want here | - Example of notes here |
+| This is a {{c1::second}} example to reinforce the formatting. | - More example notes here |
+| The {{c1::olfactory nerve}} is responsible for the sense of {{c2::smell}} | - It is the 1st cranial nerve. It's the only cranial nerve that isn't myelinated |
+| {{c1::Chromosomes}} are organized structures of DNA and proteins found in the {{c2::nucleus}} | - They contain many genes, regulatory elements, and intervening sequences |
+| DNA {{c1::methylation}} at {{c2::CpG}} islands {{c3::represses}} transcription | - Methylation is mostly relevant to key developmental genes - Mechanistically, methylation is used to disrupt binding of transcription factors, recruit "readers", recruit heterochromatin protein |
+| Hypoxia may be caused by {{c1::carbon monoxide}} poisoning, which decreases the O2 content of blood (CaO2) | - Cyanide poisoning, on the other hand, increases O2 content as it's not getting extracted (cyanide binds a3 in Fe3+ state in complex IV) |
 - Only add each piece of information once.
 - Questions and answers must be in """ + st.session_state["lang"] + """.
 - Ignore information about the school or professor.
