@@ -33,9 +33,16 @@ Note: App adds a custom note type so that there is no issue with note's name and
 
 ### Changelog:
 
+0.82 Beta
+
+- Made it compatible with Cloze deletions
+- Prompt automatically produces clozes (1-2 average per card)
+- Fixed the Notetype, and made it compatible with AnKing's Notetype
+- Fixed the naming convention of the cards
+
 0.81 Beta
 
-- Changed gpt 3.5 turbo for gpt 4o mini
+- Changed gpt 3.5 turbo for GPT 4o mini
 - Images are now transferred with the cards
 - Images are now analyzed by gpt 4o mini
 - Prompt was improved, but orientated for medical students.
