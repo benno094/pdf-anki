@@ -18,7 +18,7 @@ async function addFlashcard(deck: string, front: string, back: string, tags: str
   try {
     const note = {
       deckName: deck,
-      modelName: 'AnKing',
+      modelName: 'AnKingOverhaul',
       fields: { Text: front, Extra: back },
       options: { allowDuplicate: false },
       tags: [tags],
@@ -45,7 +45,7 @@ async function addFlashcards(deck: string, flashcards: Card[]) {
     const notes = await Promise.all(flashcards.map(async (card) => {
       let note = {
         deckName: deck,
-        modelName: 'Anking',
+        modelName: 'AnKingOverhaul',
         fields: { Text: card.front, Extra: card.back },
         options: { allowDuplicate: false },
         tags: card.tags,
@@ -99,7 +99,7 @@ async function addFlashcardWithImage(deck: string, image: Uint8Array, front: str
   try {
     const note = {
       deckName: deck,
-      modelName: 'AnKing',
+      modelName: 'AnKingOverhaul',
       fields: { Text: front, Extra: back },
       options: { allowDuplicate: false },
       tags: [ tags ],
@@ -156,21 +156,21 @@ async function checkModelExistence() {
     });
 
     const jsonResponse = await checkModelExistence.json();
-    if (!jsonResponse.result.includes("AnKing")) {
+    if (!jsonResponse.result.includes("AnKingOverhaul")) {
       const createModel = await fetch('http://localhost:8765', {
       method: 'POST',
       body: JSON.stringify({
         action: "createModel",
         version: 6,
         params: {
-          modelName: "AnKing",
+          modelName: "AnKingOverhaul",
           inOrderFields: ["Text", "Extra"],
           isCloze: true,
           cardTemplates: [
             {
               Name: "Cloze",
               Front: "{{cloze:Text}}",
-              Back: "{{FrontSide}}\n\n<hr id=answer>\n\n{{Extra}}<br><br>\n\nTags: {{Tags}}",
+              Back: "{{cloze:Text}}\n\n<hr id=answer>\n\n{{Extra}}<br><br>\n\nTags: {{Tags}}",
             },
           ],
         },
