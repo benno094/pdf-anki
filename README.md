@@ -44,9 +44,9 @@ Note: App adds a custom note type (AnKingOverhual) so that there is no issue wit
 
 0.81 Beta
 
-- Changed gpt 3.5 turbo for GPT 4o mini
+- Changed gpt 3.5 turbo for gpt 4o mini
 - Images are now transferred with the cards
-- Images are now analyzed by gpt 4o mini
+- Images are now analyzed by gpt 4o mini (not consistent)
 - Prompt was improved, but orientated for medical students.
 
 0.8 beta
