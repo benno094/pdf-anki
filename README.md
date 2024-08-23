@@ -23,7 +23,8 @@ PDF to Anki program using GPT 4o mini from OpenAI. Streamlit is the web-GUI. Sho
 3. Select a page range and a deck for the flashcards to be added to.
 4. Flash cards are generated for each page and can then be modified before being added to Anki.
 
-Note: App adds a custom note type so that there is no issue with note's name and fields being in another language.
+Note: App adds a custom note type (AnKingOverhual) so that there is no issue with note's name and fields being in another language. 
+      I still recommend you install AnKing Notetype (Addon #: 952691989) for more control
 
 ### To do:
 
