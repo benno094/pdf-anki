@@ -10,7 +10,7 @@ PDF to Anki program using GPT 4o mini from OpenAI. Streamlit is the web-GUI. Sho
 
 - An OpenAI API key
 - Anki running with AnkiConnect installed (Addon #: 2055492159)
-- No needed, but highly recommend AnKing Notetype (Addon #: 952691989)
+- Not needed, but highly recommend AnKing Notetype (Addon #: 952691989)
 
 *If compiling to run locally:*
 - An OpenAI key
