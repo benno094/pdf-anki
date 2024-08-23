@@ -85,7 +85,7 @@ You are receiving the text from one slide of a lecture. Use the following princi
 
 Material: "Source material"
 
-Task: Your task is to analyze the material and condense the information into concise and direct statements. Ensure that each statement is clearly written at a level appropriate for medical students while being easily understandable, and adheres to the specified formatting and reference criteria. 
+Task: Your task is to analyze the Source Material and condense the information into concise and direct statements. Ensure that each statement is clearly written at a level appropriate for medical students while being easily understandable, and adheres to the specified formatting and reference criteria. 
 
 Formatting Criteria: 
 - Construct a table with two columns: "Statements" and "explanations".
@@ -93,20 +93,34 @@ Formatting Criteria:
 - Each row of the "explanation" column should provide additional details for the corresponding "Statement". There should be no cloze deletions in this column.
 
 Reference Criteria for each "Statement":
-- Restrict each statement to 2 cloze deletions. If needed, you may add 1-2 more cloze deletions but restrict them to either cloze1 or cloze2.
+- Restrict each statement to 1 or 2 cloze deletions. If needed, you may add 1-2 more cloze deletions but restrict them to either cloze1 or cloze2.
 - Limit the word count of each statement to less than 40 words.
 - Keep the text within the cloze deletions limited to one or two Source key words.
 - Each statement must be able to stand alone.
-- Keep ONLY simple, direct, statements in the "Statements" column. Keep any additional information in the "explanation" column search the, and research USMLE textbook for detailed explanations supporting the statement.
+- Keep ONLY simple, direct, statements in the "Statements" column. Keep any additional information in the "Explanation" column. Search and research USMLE textbook for detailed explanations supporting the statement.
 
 Example: 
-| Statements | Notes |
-| {{c1::word}} Give an example of what you want here | - Example of notes here |
-| This is a {{c1::second}} example to reinforce the formatting. | - More example notes here |
-| The {{c1::olfactory nerve}} is responsible for the sense of {{c2::smell}} | - It is the 1st cranial nerve. It's the only cranial nerve that isn't myelinated |
-| {{c1::Chromosomes}} are organized structures of DNA and proteins found in the {{c2::nucleus}} | - They contain many genes, regulatory elements, and intervening sequences |
-| DNA {{c1::methylation}} at {{c2::CpG}} islands {{c3::represses}} transcription | - Methylation is mostly relevant to key developmental genes - Mechanistically, methylation is used to disrupt binding of transcription factors, recruit "readers", recruit heterochromatin protein |
-| Hypoxia may be caused by {{c1::carbon monoxide}} poisoning, which decreases the O2 content of blood (CaO2) | - Cyanide poisoning, on the other hand, increases O2 content as it's not getting extracted (cyanide binds a3 in Fe3+ state in complex IV) |
+    Source Material: 
+        Hyperaldosteronism: Increased secretion of aldosterone from adrenal gland. Clinical features include hypertension, ↓ K⁺ (from increased renal Na+-K+ ATPase activity, resulting increased K⁺ secretion and causing hypokalemia) or normal K⁺, metabolic alkalosis. 1° hyperaldosteronism does not directly cause edema due to aldosterone escape mechanism. However, certain 2° causes of hyperaldosteronism (eg, heart failure) impair the aldosterone escape mechanism, leading to worsening of edema.
+        Primary hyperaldosteronism: Seen with adrenal adenoma (Conn syndrome), ectopic aldosterone-secreting tumors (kidney, ovaries), or bilateral adrenal hyperplasia. ↑ aldosterone, ↓ renin. Presents with increased renal blood flow and increased glomerular filtration rate, resulting in sodium and water retention (severe volume overload). Causes resistant hypertension.
+        Secondary hyperaldosteronism: Seen in patients with renovascular hypertension, juxtaglomerular cell tumors (independent activation of RAAS, from excess renin-producing "reninoma"), and edema (eg, cirrhosis, heart failure, nephrotic syndrome). ↑ aldosterone, ↑ renin. Characterized by increased aldosterone production due to an external stimulus, primarily as a response to activation of the renin-angiotensin-aldosterone system (RAAS).
+
+    Table:
+| Statements | Explanation 
+| {{c1::word}} Give an example of what you want here | - Explanation here |
+| This is a {{c1::second}} example to reinforce the formatting. | - Explanation here |
+| {{c1::Primary}} hyperaldosteronism is characterized by high aldosterone and {{c2::low}} renin | - This results in resistant hypertension; renin is downregulated via high blood pressure |
+| Hyperaldosteronism {{c2::increases}} K⁺ secretion and causes {{c2::hypo}}kalemia | - Increased Na+ reabsorption → increased Na+-K+ ATPase activity → increased driving force across luminal membrane from increased intracellular K+ |
+| Primary hyperaldosteronism may present with {{c1::increased}} renal blood flow and {{c1::increased}} glomerular filtration rate | - Due to arterial hypertension and hypersecretion of aldosterone |
+| Primary hyperaldosteronism initially causes severe volume {{c1::overload}} and {{c1::hyper}}tension | - Due to sodium and water retention |
+| Adrenal adenoma and ectopic aldosterone-secreting tumors (kidney, ovaries) may cause {{c1::primary}} hyperaldosteronism | - Can lead to resistant hypertension |
+| {{c1::Secondary}} hyperaldosteronism is seen in patients with juxtaglomerular cell tumor due to independent activation of the RAAS | - Results in severe hypertension that is difficult to control - These secrete renin (hence AKA reninoma), thus you also have Angiotensin II upregulation as well as aldosterone (failure of aldosterone escape) |
+| Secondary hyperaldosteronism is due to activation of {{c1::renin-angiotensin}} system | - Seen in patients with renovascular hypertension (renal artery stenosis), juxtaglomerular cell tumors, and edema (cirrhosis, heart failure, nephrotic syndrome) |
+| Congestive heart failure, cirrhosis, nephrotic syndrome, and excessive peripheral edema may cause {{c1::secondary}} hyperaldosteronism | - 2° hyperaldosteronism is driven by an increase in renin production (i.e. stimulation from edema) |
+| {{c1::Secondary}} hyperaldosteronism is characterized by high aldosterone and {{c2::high}} renin | - Seen in patients with renovascular hypertension and juxtaglomerular cell tumor (due to independent activation of renin-angiotensin-aldosterone system), as well as causes of edema (cirrhosis, heart failure, nephrotic syndrome) |
+
+End of Example
+
 - Only add each piece of information once.
 - Questions and answers must be in """ + st.session_state["lang"] + """.
 - Ignore information about the school or professor.
