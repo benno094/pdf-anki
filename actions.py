@@ -247,7 +247,7 @@ Example:
                 tags = st.session_state["flashcards_" + str(page) + "_tags"]
                 note = {
                     "deckName": deck,
-                    "modelName": "Cloze",
+                    "modelName": "AnkingOverhaul",
                     "front": front,
                     "back": back,
                     "tags": [tags]
