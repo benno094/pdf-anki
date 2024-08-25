@@ -23,7 +23,7 @@ class AppView:
     def display(self):
         st.session_state['dev'] = False
         st.title('📄PDFtoAnki')
-        st.header('Powered by GPT 4o mini from OpenAI')
+        st.header('Powered by GPT 4o mini from OpenAI, Yes i made this')
 
         # TODO: Check if GPT-4 is available and if openai account has enough credits
         if "no_ankiconnect" in st.session_state and st.session_state.no_ankiconnect == False:
