@@ -7,6 +7,9 @@ import base64
 import streamlit as st
 from streamlit_extras.badges import badge
 import fitz
+import uuid
+import time
+import hashlib
 import tempfile
 from streamlit_cropper import st_cropper
 from PIL import Image
@@ -543,56 +546,61 @@ class AppView:
                 raise ValueError("Page number must be provided for PDF files.")
             pdf_document = fitz.open(file_path)
             pdf_page = pdf_document[page]
-            return self.extract_entire_pdf_page_as_image(pdf_page)
+
+            # Pass the original PDF name stored in session state
+            original_pdf_name = st.session_state.get("file_name", "default_pdf_name.pdf")
+            return self.extract_entire_pdf_page_as_image(original_pdf_name, pdf_page)
         else:
             raise ValueError("Expected a fitz.Page object.")
 
-    def extract_entire_pdf_page_as_image(self, page):
-        images = []
-        # Render the entire page as an image
-        pix = page.get_pixmap(dpi=100)  # You can adjust the dpi as needed
-        image_bytes = pix.tobytes(output="jpg")
-        image_ext = "jpg"
-        image_base64 = base64.b64encode(image_bytes).decode('utf-8')
-        images.append(f'<img src="data:image/{image_ext};base64,{image_base64}" alt="PDF Page Image">')
+    def extract_entire_pdf_page_as_image(self, pdf_name, page):
+        # Save the rendered page as an image file
+        pix = page.get_pixmap(dpi=100)  # Adjust the dpi as needed
 
-        return images
+        # Use the original PDF name and page number to create the image file name
+        base_name_without_ext = os.path.splitext(pdf_name)[0]
+        temp_dir = tempfile.gettempdir()
+        image_path = os.path.join(temp_dir, f"{base_name_without_ext}_page_{page.number}.jpg")
+
+        # Save the image to the file
+        pix.save(image_path)
+
+        return [image_path]
 
     def prepare_and_add_flashcards_to_anki(self, page):
         prepared_flashcards = []
-        pdf_document = fitz.open(st.session_state["temp_file_path"])
+        pdf_path = st.session_state["temp_file_path"]
+        pdf_name = st.session_state.get("file_name")  # Use the original file name
+        pdf_document = fitz.open(pdf_path)
         pdf_page = pdf_document[page]
-        images = self.extract_images(st.session_state["temp_file_path"], page=page)
+        image_paths = self.extract_images(pdf_path, page=page)
 
         for i in range(st.session_state["flashcards_" + str(page) + "_count"]):
             if st.session_state[f"fc_active_{page, i}"] != False:
                 front_text = st.session_state[f"front_{page, i}"]
                 back_text = st.session_state[f"back_{page, i}"]
-                back_text_with_images = back_text + '<br><br>' + ''.join(images)
-                prepared_flashcards.append({"front": front_text, "back": back_text_with_images})
+
+                for image_path in image_paths:
+                    base_name = os.path.basename(pdf_name)
+                    base_name_without_ext = os.path.splitext(base_name)[0]
+                    filename = f"{base_name_without_ext}_page_{page + 1}.jpg"
+                    back_text += f'<br><img src="{filename}">'
+                    self.actions.add_image_to_anki(image_path, pdf_name, page)
+
+                prepared_flashcards.append({"front": front_text, "back": back_text})
 
         try:
             success = self.actions.add_to_anki(prepared_flashcards, page)
             if success:
                 st.session_state["flashcards_" + str(page) + "_added"] = True
                 st.session_state[f"status_label_{page}"] = "Added!"
-                if st.session_state['training_' + str(page)] == True:
-                    with open('training.jsonl', 'a', encoding='utf-8') as file:
-                        write = '{"messages": [{"role": "system", "content": "' + "You are a flashcard making assistant. Follow the user's requirements carefully and to the letter. Always call one of the provided functions."
-                        write += '"}, {"role": "user", "content": "' + st.session_state["prompt"] + st.session_state[
-                            'text_' + str(page)] + '"}, '
-                        write += '{"role": "assistant", "content": "{\\"flashcards\\": ' + str(
-                            prepared_flashcards) + '"}]}'
-                        write_clean = write.replace('\n', ' ')
-                        file.write(write_clean + '\n')
-                # Add state for flashcards added
-                # TODO: fix flashcards reverting to GPT response once added
             else:
-                raise Exception("Error 2:", success)
+                raise Exception(f"Error in adding flashcards to Anki: {success}")
 
         except Exception as e:
+            st.error(f"Failed to add flashcards to Anki: {str(e)}")
             with st.sidebar:
-                st.warning(e, icon="⚠️")
+                st.warning(f"Failed to add flashcards to Anki: {str(e)}", icon="⚠️")
 
     def generate_flashcards(self, page, regen=None):
         if regen:

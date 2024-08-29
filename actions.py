@@ -9,6 +9,8 @@ from io import BytesIO
 import openai
 from openai import OpenAI
 import re
+import uuid
+import hashlib
 import streamlit as st
 import streamlit.components.v1 as components
 import markdown
@@ -21,9 +23,10 @@ build_dir = os.path.join(parent_dir, "API/frontend/build")
 _API = components.declare_component("API", path=build_dir)
 
 
-def API(action, key=None, deck=None, image=None, front=None, back=None, tags=None, flashcards=None):
+def API(action, key=None, deck=None, image=None, front=None, back=None, tags=None, flashcards=None,
+        filename=None):
     component_value = _API(action=action, key=key, deck=deck, image=image, front=front, back=back, tags=tags,
-                           flashcards=flashcards)
+                           flashcards=flashcards, filename=filename)
     return component_value
 
 
@@ -240,6 +243,28 @@ End of Example
                 continue
             print("Un-caught response:\n", completion.choices[0].message)
             retries += 1
+
+    def add_image_to_anki(self, image_path, pdf_name, page):
+        try:
+            # Read the image as binary data and encode it in base64 format
+            with open(image_path, "rb") as img_file:
+                image_data = base64.b64encode(img_file.read()).decode('utf-8')
+
+            # Create a custom file name using the PDF name and page number
+            base_name = os.path.basename(pdf_name)
+            base_name_without_ext = os.path.splitext(base_name)[0]
+            filename = f"{base_name_without_ext}_page_{page + 1}.jpg"
+
+            # Call the API to store the image in Anki's media folder
+            image_stored = API("storeImage", image=image_data, filename=filename)
+
+            # Simplified: No success or error messages related to image storage
+            return image_stored
+
+        except Exception as e:
+            # Log error internally but do not raise it to the user
+            st.error(f"add_image_to_anki error: {str(e)}")
+            return None
 
     def add_to_anki(self, cards, page):
         deck = st.session_state[f"{st.session_state['deck_key']}"]
