@@ -584,7 +584,7 @@ class AppView:
                     base_name = os.path.basename(pdf_name)
                     base_name_without_ext = os.path.splitext(base_name)[0]
                     filename = f"{base_name_without_ext}_page_{page + 1}.jpg"
-                    back_text += f'<br><img src="{filename}">'
+                    back_text += f'<br><br><img src="{filename}">'
                     self.actions.add_image_to_anki(image_path, pdf_name, page)
 
                 prepared_flashcards.append({"front": front_text, "back": back_text})
