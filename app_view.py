@@ -118,8 +118,8 @@ class AppView:
                                 # Load the PDF and its previews and extract text for each page
                                 for i, page in enumerate(doc):
                                     progress_bar.progress(i / len(doc), text="Extracting text and images from pages...")
-                                    pix = page.get_pixmap(dpi=100)
-                                    preview = pix.tobytes(output='jpg', jpg_quality=90)
+                                    pix = page.get_pixmap(dpi=150)
+                                    preview = pix.tobytes(output='jpg', jpg_quality=100)
                                     st.session_state['image_' + str(i)] = preview
                                     # TODO: Remove redundant text; only use if more than 3? lines -> check if mainly picture then GPT4-Vision?
                                     st.session_state['text_' + str(i)] = page.get_text(sort=True)
@@ -555,7 +555,7 @@ class AppView:
 
     def extract_entire_pdf_page_as_image(self, pdf_name, page):
         # Save the rendered page as an image file
-        pix = page.get_pixmap(dpi=100)  # Adjust the dpi as needed
+        pix = page.get_pixmap(dpi=150)  # Adjust the dpi as needed
 
         # Use the original PDF name and page number to create the image file name
         base_name_without_ext = os.path.splitext(pdf_name)[0]
