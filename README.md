@@ -35,6 +35,17 @@ Note: App adds a custom note type (AnKingOverhual) so that there is no issue wit
 
 ### Changelog:
 
+0.83 Beta
+
+- Images are now properly imported and stored in the corresponding Anki Media Collection folder
+- Images are no longer Base64, and are instead proper jpg files
+- Now compatible with Ankihub (Ankihub is incompatible with Base64 images)
+- Used FirstAid and Anking as examples to improve the prompt. Will add more later
+- Decreased size of images, from full sized images to truncated DPI = 150
+- Fixed some bugs with card importing and added more debugging errors
+- Images aren't analyzed by gpt 4o mini anymore. Too many tokens and not worth the effort for every page
+- Notetype is now AnKingOverhaul
+
 0.82 Beta
 
 - Made it compatible with Cloze deletions
