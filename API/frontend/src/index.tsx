@@ -9,11 +9,48 @@ import CryptoES from 'crypto-es';
 interface Card {
   front: string;
   back: string;
+  filename: string;
   tags: string[];
-  image: Uint8Array;
+  image: string;
 }
 
 // Adds note to a deck
+
+async function storeImage(image: string, filename: string) {
+    try {
+        console.log("Storing image with filename:", filename); // Debug log
+        // Store the image in Anki's media collection
+        const storeMediaResponse = await fetch("http://localhost:8765", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                action: "storeMediaFile",
+                version: 6,
+                params: {
+                    filename: filename,
+                    data: image // Use the base64-encoded image directly
+                }
+            })
+        });
+
+        const storeMediaJson = await storeMediaResponse.json();
+        console.log("Store Media Response:", storeMediaJson); // Debug log
+
+        if (storeMediaJson.error) {
+            console.error(`Error storing image: ${storeMediaJson.error}`);
+            Streamlit.setComponentValue(`Error storing image: ${storeMediaJson.error}`);
+            return `Error storing image: ${storeMediaJson.error}`;
+        }
+
+        console.log(`Image successfully stored with filename: ${filename}`);
+        Streamlit.setComponentValue(`Image successfully stored with filename: ${filename}`);
+        return storeMediaJson.result;
+    } catch (error) {
+        throw new Error('Error: Unable to reach the server');
+        return "Error";
+    }
+}
+
 async function addFlashcard(deck: string, front: string, back: string, tags: string) {
   try {
     const note = {
@@ -53,15 +90,19 @@ async function addFlashcards(deck: string, flashcards: Card[]) {
       };
 
       if (card.image) {
-        let binaryString = new TextDecoder().decode(card.image);
         let date = Date.now();
         let hash = CryptoES.SHA256(date.toString()).toString();
+        let filename = "pdf-anki-" + hash + ".jpg";
 
+        // Save the image file
         note.picture = [{
-          data: binaryString,
-          filename: "pdf-anki-" + hash + ".jpg",
-          fields: ["Back"]
+          data: card.image,  // Use the image data directly here
+          filename: filename,
+          fields: []
         }];
+
+        // Include the image using an HTML <img> tag in the 'Back' field
+        note.fields.Extra = card.back + `<br><img src="${filename}" />`;
       }
 
       return note;
@@ -92,8 +133,7 @@ async function addFlashcards(deck: string, flashcards: Card[]) {
 }
 
 // Adds note to a deck including image
-async function addFlashcardWithImage(deck: string, image: Uint8Array, front: string, back: string, tags: string) {
-  let binaryString = new TextDecoder().decode(image);
+async function addFlashcardWithImage(deck: string, image: string, front: string, back: string, tags: string) {
   let date = Date.now();
   let hash = CryptoES.SHA256(date.toString());
   try {
@@ -104,7 +144,7 @@ async function addFlashcardWithImage(deck: string, image: Uint8Array, front: str
       options: { allowDuplicate: false },
       tags: [ tags ],
       picture: [{
-        data: binaryString,
+        data: image,
         filename: "pdf-anki-" + hash + ".jpg",
         fields: [ "Extra" ]
       }]
@@ -112,7 +152,7 @@ async function addFlashcardWithImage(deck: string, image: Uint8Array, front: str
     const addNoteResponse = await fetch('http://localhost:8765', {
       method: 'POST',
       body: JSON.stringify({
-        action: 'addNote',
+        action: 'addNotes',
         params: { note: note },
         version: 6,
       }),
@@ -175,7 +215,7 @@ async function checkModelExistence() {
           ],
         },
       }),
-    });    
+    });
 
     const jsonResponse = await createModel.json();
     return jsonResponse.result;
@@ -222,6 +262,7 @@ async function onRender(event: Event): Promise<void> {
   let back = data.args["back"]
   let tags = data.args["tags"]
   let flashcards = data.args["flashcards"]
+  let filename = data.args["filename"];
 
   try {
     switch (action) {
@@ -239,6 +280,9 @@ async function onRender(event: Event): Promise<void> {
         const cards = await addFlashcards(deck, flashcards);
         Streamlit.setComponentValue(cards)
         break;
+      case "storeImage":
+        const storeImageResult = await storeImage(image, filename);
+        Streamlit.setComponentValue(storeImageResult);
       case "addCardWithImage":
         const response = await addFlashcardWithImage(deck, image, front, back, tags);
         Streamlit.setComponentValue(response)
