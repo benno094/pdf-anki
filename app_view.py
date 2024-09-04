@@ -464,11 +464,13 @@ class AppView:
                                         f"Add {st.session_state['flashcards_' + str(p) + '_to_add']} flashcard(s) to Anki",
                                         key=f"add_{str(p)}", disabled=no_cards):
                                     self.prepare_and_add_flashcards_to_anki(p)
+                                    self.upload_image(st.session_state.get("file_name"), p)
                                     self.next_page()
                             else:
                                 if st.button(
                                         f"Add {st.session_state['flashcards_' + str(p) + '_to_add']} flashcard(s) to Anki again", key=f"add_{str(p)}", disabled=no_cards):
                                     self.prepare_and_add_flashcards_to_anki(p)
+                                    self.upload_image(st.session_state.get("file_name"), p)
                                     self.next_page()
                             if f'status_label_{str(p)}' not in st.session_state:
                                 if st.button("Hide page", key=f"hide_{str(p)}"):
@@ -567,25 +569,34 @@ class AppView:
 
         return [image_path]
 
+    def upload_image(self, pdf_name, page):
+        try:
+            # Extract the image once for the page
+            image_paths = self.extract_images(st.session_state["temp_file_path"], page)
+
+            for image_path in image_paths:
+                base_name = os.path.basename(pdf_name)
+                base_name_without_ext = os.path.splitext(base_name)[0]
+                filename = f"{base_name_without_ext}_page_{page + 1}.jpg"
+                self.actions.add_image_to_anki(image_path, pdf_name, page)
+
+        except Exception as e:
+            st.error(f"Error uploading image: {str(e)}")
+
     def prepare_and_add_flashcards_to_anki(self, page):
         prepared_flashcards = []
-        pdf_path = st.session_state["temp_file_path"]
         pdf_name = st.session_state.get("file_name")  # Use the original file name
-        pdf_document = fitz.open(pdf_path)
-        pdf_page = pdf_document[page]
-        image_paths = self.extract_images(pdf_path, page=page)
 
         for i in range(st.session_state["flashcards_" + str(page) + "_count"]):
             if st.session_state[f"fc_active_{page, i}"] != False:
                 front_text = st.session_state[f"front_{page, i}"]
                 back_text = st.session_state[f"back_{page, i}"]
 
-                for image_path in image_paths:
-                    base_name = os.path.basename(pdf_name)
-                    base_name_without_ext = os.path.splitext(base_name)[0]
-                    filename = f"{base_name_without_ext}_page_{page + 1}.jpg"
-                    back_text += f'<br><br><img src="{filename}">'
-                    self.actions.add_image_to_anki(image_path, pdf_name, page)
+                # Add image reference to the back text
+                base_name = os.path.basename(pdf_name)
+                base_name_without_ext = os.path.splitext(base_name)[0]
+                filename = f"{base_name_without_ext}_page_{page + 1}.jpg"
+                back_text += f'<br><br><img src="{filename}">'
 
                 prepared_flashcards.append({"front": front_text, "back": back_text})
 
