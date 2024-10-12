@@ -23,9 +23,79 @@ class AppView:
     def __init__(self, actions):
         self.actions = actions
 
+    @st.cache_data
+    def extract_pdf_data(_self, file_path):
+        # Open the PDF and extract text and images (but do not return the `fitz.Document` object itself)
+        doc = fitz.open(file_path)
+        page_count = len(doc)
+
+        extracted_data = {}
+        for i in range(page_count):
+            page = doc.load_page(i)
+            text = page.get_text()
+            pixmap = page.get_pixmap(dpi=150)
+            image_bytes = pixmap.tobytes(output='jpg', jpg_quality=100)
+            extracted_data[i] = {
+                "text": text,
+                "image": image_bytes
+            }
+
+        return extracted_data, page_count
+
+    def reset_cache_on_new_file(self, file):
+        if "last_uploaded_file" not in st.session_state:
+            st.session_state["last_uploaded_file"] = None
+
+        if file is not None:
+            if file.name != st.session_state["last_uploaded_file"]:
+                # Clear the cached data if a new file is uploaded
+                st.cache_data.clear()
+                self.clear_flashcards()  # Clear the flashcard session state
+                st.session_state["last_uploaded_file"] = file.name
+                with open(os.path.join("/tmp", file.name), "wb") as f:
+                    f.write(file.getbuffer())
+                st.session_state["temp_file_path"] = os.path.join("/tmp", file.name)
+
+
     def display(self):
         st.session_state['dev'] = False
-        st.title('📄PDFtoAnki')
+        col1, col2 = st.columns([0.7, 0.3])
+
+        with col1:
+            st.title('📄PDFtoAnki')  # Title in the first column
+
+        with col2:
+            # Add a button to add all flashcards
+            st.markdown("""
+            <style>
+            div.stButton > button {
+                font-size: 18px;
+                font-weight: bold;
+                padding: 15px;
+                background-color: #1f77b4;
+                color: white;
+                border: 2px solid transparent;
+                border-radius: 12px;
+                width: 100%;
+                transition: background-color 0.3s ease, transform 0.2s ease;
+            }
+
+            div.stButton > button:hover {
+                background-color: #1a5f8e;
+                transform: scale(1.02);
+            }
+
+            div.stButton > button:active {
+                background-color: #174a6b;
+                transform: scale(0.98);
+            }
+            </style>
+            """, unsafe_allow_html=True)
+
+            # Actual button that triggers the action
+            if st.button("Add All Active Cards to Anki"):
+                self.add_all_flashcards_to_anki()  # Call the method to add all active flashcards
+
         st.header('Powered by GPT 4o mini from OpenAI')
 
         # TODO: Check if GPT-4 is available and if openai account has enough credits
@@ -51,7 +121,7 @@ class AppView:
             )
             badge(type="twitter", name="PDFToAnki")
             badge(type="github", name="Zediious95/pdf-anki")
-            
+
             api_key = st.empty()
             api_key_text = st.empty()
             if "openai_error" in st.session_state:
@@ -98,7 +168,7 @@ class AppView:
                     # TODO: Add warning for strange characters in file name
                     file = st.file_uploader("Choose a file", type=["pdf"], key=st.session_state["file_uploader_key"])
                     if file:
-                        # Store the original file name for display
+                        self.reset_cache_on_new_file(file)
                         st.session_state["file_name"] = file.name
 
                         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
@@ -108,7 +178,8 @@ class AppView:
 
                             # Open the PDF using the temporary file path
                             doc = fitz.open(temp_file_path)
-                            st.session_state['page_count'] = len(doc)
+                            extracted_data, page_count = self.extract_pdf_data(st.session_state["temp_file_path"])
+                            st.session_state['page_count'] = page_count
 
                             # Check if previews already exist
                             if f"image_{st.session_state['page_count'] - 1}" not in st.session_state:
@@ -119,7 +190,7 @@ class AppView:
                                 for i, page in enumerate(doc):
                                     progress_bar.progress(i / len(doc), text="Extracting text and images from pages...")
                                     pix = page.get_pixmap(dpi=150)
-                                    preview = pix.tobytes(output='jpg', jpg_quality=100)
+                                    preview = st.image(extracted_data[i]["image"])
                                     st.session_state['image_' + str(i)] = preview
                                     # TODO: Remove redundant text; only use if more than 3? lines -> check if mainly picture then GPT4-Vision?
                                     st.session_state['text_' + str(i)] = page.get_text(sort=True)
@@ -153,12 +224,12 @@ class AppView:
                     num = st.number_input('Number of pages', value=1, format='%d', disabled=True)
                 else:
                     if "deck_key" in st.session_state:
-                        num = st.number_input('Number of pages', value=10, min_value=1,
+                        num = st.number_input('Number of pages', value=20, min_value=1,
                                               max_value=st.session_state['page_count'], format='%d', key="num_pages")
                     else:
                         num = st.number_input('Number of pages',
                                               value=st.session_state['page_count'] if st.session_state[
-                                                                                          'page_count'] < 10 else 10,
+                                                                                          'page_count'] < 20 else 20,
                                               min_value=1, max_value=st.session_state['page_count'], format='%d',
                                               key="num_pages")
             with col2:
@@ -176,13 +247,15 @@ class AppView:
             deck_info = st.empty()
         if "start_page" in st.session_state and st.session_state.start_page == None:
             page_info.info("Choose a starting page")
+            if "temp_file_path" in st.session_state:
+                extracted_data, page_count = self.extract_pdf_data(st.session_state["temp_file_path"])
 
-            st.markdown("**Preview:**")
+                st.markdown("**Preview:**")
 
-            for i in range(0, st.session_state['page_count']):
-                if i == st.session_state['page_count']:
-                    break
-                st.image(st.session_state['image_' + str(i)], caption=f"Page {str(i + 1)}")
+                for i in range(0, st.session_state['page_count']):
+                    if i == st.session_state['page_count']:
+                        break
+                    st.image(extracted_data[i]["image"], caption=f"Page {str(i + 1)}")
         else:
             with st.sidebar:
                 if "deck_key" not in st.session_state:
@@ -197,7 +270,7 @@ class AppView:
                         index=None,
                         placeholder='Anki deck'
                     )
-                
+
                     if st.button("Refresh decks", key="deck_refresh_btn"):
                         if "decks" in st.session_state:
                             del st.session_state["decks"]
@@ -211,6 +284,7 @@ class AppView:
                 st.stop()  # Stop the script if API key is not provided
 
         if "hide_file_uploader" in st.session_state:
+            extracted_data, page_count = self.extract_pdf_data(st.session_state["temp_file_path"])
             with st.sidebar:
                 col1, col2 = st.columns([0.9, 0.1])
                 with col1:
@@ -226,7 +300,7 @@ class AppView:
                     for i in range(0, st.session_state['page_count']):
                         if i == st.session_state['page_count']:
                             break
-                        st.image(st.session_state['image_' + str(i)], caption=f"Page {str(i + 1)}")
+                        st.image(extracted_data[i]["image"], caption=f"Page {str(i + 1)}")
 
                 if st.session_state.start_page != None and f"{st.session_state['deck_key']}" in st.session_state and \
                         st.session_state[f"{st.session_state['deck_key']}"] == None:
@@ -235,6 +309,9 @@ class AppView:
 
         if st.session_state["start_page"] == None:
             st.stop()
+
+        if "temp_file_path" in st.session_state:
+            extracted_data, page_count = self.extract_pdf_data(st.session_state["temp_file_path"])
 
         # Loop through the pages
         for i in range(start - 1, start + num - 1):
@@ -268,7 +345,7 @@ class AppView:
                         if "add_image" in st.session_state and st.session_state["add_image"][0] == i:
                             page = st.session_state["add_image"][0]
                             card = st.session_state["add_image"][1]
-                            image_bytes = st.session_state['image_' + str(i)]
+                            image_bytes = st.image(extracted_data[i]["image"])
                             image_io = io.BytesIO(image_bytes)
                             pil_image = Image.open(image_io)
                             cropped_img = st_cropper(pil_image, realtime_update=True, box_color="#000000",
@@ -280,11 +357,11 @@ class AppView:
 
                             st.session_state[f"img_{page, card}"] = cropped_img
                         else:
-                            st.image(st.session_state['image_' + str(i)])
+                            st.image(extracted_data[i]["image"])
 
                     with tabs[1]:
                         # st.warning('''Don't click "add image" while on text preview''')
-                        st.text(st.session_state['text_' + str(i)])
+                        st.write(extracted_data[i]["text"])
 
                 # If flashcards exist for the page, show them and show 'Add to Anki' button
                 # Otherwise, show 'generate flashcards' button
@@ -338,7 +415,7 @@ class AppView:
                                 # Default state: display flashcard
 
                                 if f"fc_active_{p, i}" not in st.session_state:
-                                    if st.session_state["flashcards_" + str(p) + "_count"] > 5:
+                                    if st.session_state["flashcards_" + str(p) + "_count"] > 15:
                                         st.session_state[f"fc_active_{p, i}"] = False
                                         st.session_state["flashcards_" + str(p) + "_to_add"] = 0
                                         if "front" not in flashcard:
@@ -468,7 +545,8 @@ class AppView:
                                     self.next_page()
                             else:
                                 if st.button(
-                                        f"Add {st.session_state['flashcards_' + str(p) + '_to_add']} flashcard(s) to Anki again", key=f"add_{str(p)}", disabled=no_cards):
+                                        f"Add {st.session_state['flashcards_' + str(p) + '_to_add']} flashcard(s) to Anki again",
+                                        key=f"add_{str(p)}", disabled=no_cards):
                                     self.prepare_and_add_flashcards_to_anki(p)
                                     self.upload_image(st.session_state.get("file_name"), p)
                                     self.next_page()
@@ -479,10 +557,13 @@ class AppView:
                                     st.rerun()
                         with col2:
                             if "flashcards_" + str(p) + "_tags" not in st.session_state:
-                                st.session_state["flashcards_" + str(p) + "_tags"] = st.session_state["file_name"].replace(' ', '_').replace('.pdf', '')
-                            st.text_input("Tag:", value=st.session_state["flashcards_" + str(p) + "_tags"], key=f"tag_{str(p)}")
+                                st.session_state["flashcards_" + str(p) + "_tags"] = st.session_state[
+                                    "file_name"].replace(' ', '_').replace('.pdf', '')
+                            st.text_input("Tag:", value=st.session_state["flashcards_" + str(p) + "_tags"],
+                                          key=f"tag_{str(p)}")
                         if "flashcards_" + str(p) + "_added" in st.session_state:
-                            st.info('Already added cards will not be overwritten when adding again. Change "Front" text to add new card(s). Original card(s) will remain in Anki.')
+                            st.info(
+                                'Already added cards will not be overwritten when adding again. Change "Front" text to add new card(s). Original card(s) will remain in Anki.')
                         if st.session_state.no_ankiconnect == True:
                             st.warning("You need AnkiConnect to be able to add cards")
 
@@ -519,12 +600,12 @@ class AppView:
                 del st.session_state[key]
 
     def disable_flashcard(self, page, num):
-        st.session_state[f"fc_active_{page, num}"] = False
-        st.session_state["flashcards_" + str(page) + "_to_add"] -= 1
+            st.session_state[f"fc_active_{page, num}"] = False
+            st.session_state["flashcards_" + str(page) + "_to_add"] -= 1
 
     def enable_flashcard(self, page, num):
-        st.session_state[f"fc_active_{page, num}"] = True
-        st.session_state["flashcards_" + str(page) + "_to_add"] += 1
+            st.session_state[f"fc_active_{page, num}"] = True
+            st.session_state["flashcards_" + str(page) + "_to_add"] += 1
 
     def add_flashcard(self, page):
         if f"{page}_is_title" in st.session_state:
@@ -540,6 +621,7 @@ class AppView:
         st.session_state[f"fc_active_{page, i}"] = True
         st.session_state["flashcards_" + str(page) + "_to_add"] += 1
         st.session_state['flashcards_' + str(page)].append({'front': '', 'back': ''})
+
 
     def extract_images(self, file_path, page=None):
         file_ext = os.path.splitext(file_path)[1].lower()
@@ -571,21 +653,80 @@ class AppView:
 
     def upload_image(self, pdf_name, page):
         try:
-            # Extract the image once for the page
+            #Extract the image once for the page
             image_paths = self.extract_images(st.session_state["temp_file_path"], page)
 
             for image_path in image_paths:
-                base_name = os.path.basename(pdf_name)
-                base_name_without_ext = os.path.splitext(base_name)[0]
-                filename = f"{base_name_without_ext}_page_{page + 1}.jpg"
-                self.actions.add_image_to_anki(image_path, pdf_name, page)
 
+                self.actions.add_image_to_anki(image_path, pdf_name, page)
         except Exception as e:
             st.error(f"Error uploading image: {str(e)}")
+
+    def add_all_flashcards_to_anki(self):
+        """Adds all active flashcards from all pages to Anki, including images."""
+        try:
+            # Loop through all pages
+            for page in range(st.session_state['page_count']):
+                # Check if flashcards exist for this page
+                if f"flashcards_{page}" in st.session_state:
+                    flashcard_count_key = f"flashcards_{page}_count"
+                    if flashcard_count_key not in st.session_state:
+                        st.warning(f"No flashcards initialized for page {page + 1}.")
+                        continue
+
+                    # Initialize file_name from session state
+                    file_name = st.session_state.get("file_name")
+
+                    active_flashcards_exist = False
+
+                    # Loop through flashcards on the page
+                    for i in range(st.session_state[flashcard_count_key]):
+                        front_key = f"front_{page, i}"
+                        back_key = f"back_{page, i}"
+                        active_key = f"fc_active_{page, i}"
+                        added_key = f"flashcards_{page}_{i}_added"
+
+                        # Ensure all necessary keys are initialized
+                        if front_key not in st.session_state or back_key not in st.session_state:
+                            st.warning(
+                                f"Flashcard {i + 1} on page {page + 1} is not fully initialized and will be skipped.")
+                            continue
+
+                        if active_key not in st.session_state:
+                            st.session_state[active_key] = True  # Default to active
+
+                        # Ensure the card hasn't already been added
+                        if added_key in st.session_state and st.session_state[added_key]:
+                            continue  # Skip this card as it's already added
+
+                        # If the flashcard is active, mark it as added and process it
+                        if st.session_state[active_key]:
+                            active_flashcards_exist = True  # Set flag to true if active flashcards are found
+
+                            # Mark this flashcard as added to avoid duplicates
+                            st.session_state[added_key] = True
+
+                    # Add the flashcards and images for the page if there are active flashcards
+                    if active_flashcards_exist:
+                        self.prepare_and_add_flashcards_to_anki(page)  # Add flashcards to Anki
+                        self.upload_image(file_name, page)  # Add the image for the page
+
+            st.success("All active flashcards and images added to Anki successfully!")
+        except Exception as e:
+            st.error(f"Error adding flashcards or images to Anki: {str(e)}")
+
+            st.success("All active flashcards and images added to Anki successfully!")
+        except Exception as e:
+            st.error(f"Error adding flashcards or images to Anki: {str(e)}")
 
     def prepare_and_add_flashcards_to_anki(self, page):
         prepared_flashcards = []
         pdf_name = st.session_state.get("file_name")  # Use the original file name
+
+        flashcard_count_key = f"flashcards_{page}_count"
+        if flashcard_count_key not in st.session_state:
+            st.warning(f"No flashcards initialized for page {page + 1}.")
+            return
 
         for i in range(st.session_state["flashcards_" + str(page) + "_count"]):
             if st.session_state[f"fc_active_{page, i}"] != False:
