@@ -93,8 +93,9 @@ class AppView:
             """, unsafe_allow_html=True)
 
             # Actual button that triggers the action
-            if st.button("Add All Active Cards to Anki"):
-                self.add_all_flashcards_to_anki()  # Call the method to add all active flashcards
+            if self.has_active_flashcards():
+                if st.button("Add All Active Cards to Anki"):
+                    self.add_all_flashcards_to_anki()
 
         st.header('Powered by GPT 4o mini from OpenAI')
 
@@ -140,9 +141,6 @@ class AppView:
                 api_key_text.info(
                     "Make sure you add a payment method or credits to your OpenAI account as the free tier does not suffice.")  # TODO: Make this disappear with the input box
             if st.session_state["API_KEY"] != "":
-                # if "fine_tuning" in st.session_state and st.session_state["fine_tuning"] == True:
-                #     st.session_state["model"] = "ft:gpt-4o-mini:personal:pdf-anki-new:9O0JdsS2"
-                # else:
                 st.session_state["model"] = "gpt-4o-mini"
 
                 api_key.empty()
@@ -224,12 +222,12 @@ class AppView:
                     num = st.number_input('Number of pages', value=1, format='%d', disabled=True)
                 else:
                     if "deck_key" in st.session_state:
-                        num = st.number_input('Number of pages', value=20, min_value=1,
+                        num = st.number_input('Number of pages', value=10, min_value=1,
                                               max_value=st.session_state['page_count'], format='%d', key="num_pages")
                     else:
                         num = st.number_input('Number of pages',
                                               value=st.session_state['page_count'] if st.session_state[
-                                                                                          'page_count'] < 20 else 20,
+                                                                                          'page_count'] < 10 else 10,
                                               min_value=1, max_value=st.session_state['page_count'], format='%d',
                                               key="num_pages")
             with col2:
@@ -578,6 +576,15 @@ class AppView:
                     st.session_state["start_page"] = start_page + st.session_state.num_pages
                     st.rerun()
 
+    def has_active_flashcards(self):
+    for page in range(st.session_state.get("page_count", 0)):
+        flashcard_count_key = f"flashcards_{page}_count"
+        if flashcard_count_key in st.session_state:
+            for i in range(st.session_state[flashcard_count_key]):
+                if st.session_state.get(f"fc_active_{page, i}", False):
+                    return True
+    return False
+    
     def next_page(self):
         if st.session_state['num_pages'] == 1:
             if st.session_state['start_page'] != st.session_state['page_count']:
@@ -592,20 +599,23 @@ class AppView:
             del st.session_state[key]
 
     def clear_flashcards(self):
-        for key in st.session_state.keys():
-            if key.startswith("flashcards") or key.startswith("fc_active") or key.startswith(
-                    "status_label") or key.startswith("front") or key.startswith("back"):
-                del st.session_state[key]
-            if key.endswith("is_title"):
-                del st.session_state[key]
+        keys_to_remove = [key for key in st.session_state if key.startswith("flashcards_")
+                          or key.startswith("fc_active_")
+                          or key.startswith("status_label_")
+                          or key.startswith("front_")
+                          or key.startswith("back_")]
+        for key in keys_to_remove:
+            del st.session_state[key]
+
+    def toggle_flashcard_state(self, page, num, state):
+        st.session_state[f"fc_active_{page, num}"] = state
+        st.session_state[f"flashcards_{page}_to_add"] += 1 if state else -1
 
     def disable_flashcard(self, page, num):
-            st.session_state[f"fc_active_{page, num}"] = False
-            st.session_state["flashcards_" + str(page) + "_to_add"] -= 1
+        self.toggle_flashcard_state(page, num, state=False)
 
     def enable_flashcard(self, page, num):
-            st.session_state[f"fc_active_{page, num}"] = True
-            st.session_state["flashcards_" + str(page) + "_to_add"] += 1
+        self.toggle_flashcard_state(page, num, state=True)
 
     def add_flashcard(self, page):
         if f"{page}_is_title" in st.session_state:
