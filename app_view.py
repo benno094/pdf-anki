@@ -600,10 +600,10 @@ class AppView:
 
     def clear_flashcards(self):
         keys_to_remove = [key for key in st.session_state if key.startswith("flashcards_")
-                          or key.startswith("fc_active_")
-                          or key.startswith("status_label_")
-                          or key.startswith("front_")
-                          or key.startswith("back_")]
+            or key.startswith("fc_active_")
+            or key.startswith("status_label_")
+            or key.startswith("front_")
+            or key.startswith("back_")]
         for key in keys_to_remove:
             del st.session_state[key]
 
