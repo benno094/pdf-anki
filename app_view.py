@@ -577,13 +577,13 @@ class AppView:
                     st.rerun()
 
     def has_active_flashcards(self):
-    for page in range(st.session_state.get("page_count", 0)):
-        flashcard_count_key = f"flashcards_{page}_count"
-        if flashcard_count_key in st.session_state:
-            for i in range(st.session_state[flashcard_count_key]):
-                if st.session_state.get(f"fc_active_{page, i}", False):
-                    return True
-    return False
+        for page in range(st.session_state.get("page_count", 0)):
+            flashcard_count_key = f"flashcards_{page}_count"
+            if flashcard_count_key in st.session_state:
+                for i in range(st.session_state[flashcard_count_key]):
+                    if st.session_state.get(f"fc_active_{page, i}", False):
+                        return True
+        return False
     
     def next_page(self):
         if st.session_state['num_pages'] == 1:
