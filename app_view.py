@@ -593,9 +593,9 @@ class AppView:
                 st.session_state['start_page'] = orig_st + 1
 
     def clear_data(self):
-        for key in st.session_state.keys():
-            if key == "decks" or key == "api_perms":
-                continue
+        keys_to_keep = {'decks', 'api_perms'}
+        keys_to_remove = [key for key in st.session_state if key not in keys_to_keep]
+        for key in keys_to_remove:
             del st.session_state[key]
 
     def clear_flashcards(self):
