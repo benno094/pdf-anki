@@ -94,6 +94,7 @@ Formatting Criteria:
 - Construct a table with two columns: "Statements" and "explanations".
 - Each row of the "Statements" column should contain a single statement written in Anki cloze deletion mark-up.
 - Each row of the "explanation" column should provide additional details for the corresponding "Statement". There should be no cloze deletions in this column.
+- If no text is present, leave everything bland.
 
 Reference Criteria for each "Statement":
 - Restrict each statement to 1 or 2 cloze deletions. If needed, you may add 1-2 more cloze deletions but restrict them to either cloze1 or cloze2.
@@ -101,6 +102,7 @@ Reference Criteria for each "Statement":
 - Keep the text within the cloze deletions limited to one or two Source key words.
 - Each statement must be able to stand alone.
 - Keep ONLY simple, direct, statements in the "Statements" column. Keep any additional information in the "Explanation" column. Search and research USMLE textbook for detailed explanations supporting the statement.
+- Use the following examples below as a guideline on how to construct a "Statement" and "Explanation" based on provided source material. Be mindful of the cloze positions, and how statements adhere to the source material with minimal deviation.
 
 Example: 
     Source Material: 
@@ -121,7 +123,6 @@ Example:
 | Secondary hyperaldosteronism is due to activation of {{c1::renin-angiotensin}} system | - Seen in patients with renovascular hypertension (renal artery stenosis), juxtaglomerular cell tumors, and edema (cirrhosis, heart failure, nephrotic syndrome) |
 | Congestive heart failure, cirrhosis, nephrotic syndrome, and excessive peripheral edema may cause {{c1::secondary}} hyperaldosteronism | - 2° hyperaldosteronism is driven by an increase in renin production (i.e. stimulation from edema) |
 | {{c1::Secondary}} hyperaldosteronism is characterized by high aldosterone and {{c2::high}} renin | - Seen in patients with renovascular hypertension and juxtaglomerular cell tumor (due to independent activation of renin-angiotensin-aldosterone system), as well as causes of edema (cirrhosis, heart failure, nephrotic syndrome) |
-
 End of Example
 
 - Only add each piece of information once.
